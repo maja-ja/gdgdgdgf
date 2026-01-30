@@ -1,61 +1,86 @@
 import streamlit as st
-import pandas as pd
 import json
 import streamlit.components.v1 as components
 
 # ==========================================
-# 1. 核心配置與資料 (The Brain)
+# 1. 配置與資料準備
 # ==========================================
-st.set_page_config(page_title="Etymon Decoder Hybrid", layout="wide")
+st.set_page_config(page_title="Etymon Decoder Final", layout="wide")
 
 @st.cache_data
-def get_full_data():
-    # 這裡包含所有字卡需要的細節資訊
-    data = [
-        # --- AI 科技 (AI Technology) ---
-        {"word": "neuromorphic", "p": "neuro", "r": "morphic", "meaning": "形狀/型態", "definition": "類神經型態的", "vibe": "模擬人類大腦神經元結構的運算方式，試圖讓機器擁有生物級的思考效率。", "phonetic": "ˌnjʊəroʊˈmɔːrfɪk"},
-        {"word": "hyperdimensional", "p": "hyper", "r": "dimensional", "meaning": "維度/測量", "definition": "高維空間的", "vibe": "在極高維度的向量空間中運算資料，是當代大型語言模型（LLM）處理語義的核心邏輯。", "phonetic": "ˌhaɪpərdɪˈmɛnʃənl"},
-        {"word": "autopoietic", "p": "auto", "r": "poietic", "meaning": "製作/創造", "definition": "自我生成的", "vibe": "描述一個系統能夠自我維護、自我產生。在強人工智慧（AGI）討論中，代表系統具備自我演化的生命力。", "phonetic": "ˌɔːtoʊpɔɪˈɛtɪk"},
-        
-        # --- 高階寫作 (Advanced Writing/Literary Theory) ---
-        {"word": "intertextuality", "p": "inter", "r": "textual", "meaning": "編織/文本", "definition": "文本互涉", "vibe": "強調沒有任何作品是孤立的，所有的文章都是由其他文本交織而成的『拼貼物』。", "phonetic": "ˌɪntərˌtɛkstʃuˈæləti"},
-        {"word": "epistemological", "p": "epistemo", "r": "logical", "meaning": "學說/研究", "definition": "認識論的", "vibe": "探討知識的核心本質。在高階評論中，用來質疑我們『如何知道我們所知道的事』。", "phonetic": "ɪˌpɪstəməˈlɒdʒɪkl"},
-        {"word": "defamiliarization", "p": "de", "r": "familiar", "meaning": "熟悉/家庭", "definition": "陌生化", "vibe": "文學創作的高階技巧：刻意用奇怪的方式描述平凡的事物，強迫讀者重新審視世界。", "phonetic": "diːfəˌmɪljəraɪˈzeɪʃn"},
-        
-        # --- 醫學 (Medicine) ---
-        {"word": "idiopathic", "p": "idio", "r": "pathic", "meaning": "痛苦/疾病", "definition": "特發性的 (病因不明)", "vibe": "當醫生帥氣地說出這個詞時，其實是在優雅地承認：『我們目前還不知道為什麼會生這個病。』", "phonetic": "ˌɪdiəˈpæθɪk"},
-        
-        # --- 法研 (Legal Research) ---
-        {"word": "jurisdictional", "p": "juris", "r": "dictional", "meaning": "說話/宣告", "definition": "管轄權的", "vibe": "法律攻防的起手式。如果法律效力不在該管轄區內，後面的論點再強都沒有意義。", "phonetic": "ˌdʒʊərɪsˈdɪkʃənl"},
-        
-        # --- 公務 (Public Service/Bureaucracy) ---
-        {"word": "bureaucratic", "p": "bureau", "r": "cratic", "meaning": "統治/力量", "definition": "官僚體制的", "vibe": "描述一種依賴複雜程序、層級嚴密但有時顯得僵化的行政系統。", "phonetic": "ˌbjʊərəˈkrætɪk"}
+def get_data():
+    # 這裡定義滾輪選項和字典資料
+    # 為了完全符合截圖，我們精確定義每個欄位
+    prefixes = [
+        {"id": "bureau", "label": "bureau-"},
+        {"id": "auto", "label": "auto-"},
+        {"id": "de", "label": "de-"},
+        {"id": "pre", "label": "pre-"},
+        {"id": "re", "label": "re-"},
+        {"id": "trans", "label": "trans-"},
+        {"id": "dis", "label": "dis-"},
     ]
-    df = pd.DataFrame(data)
+    roots = [
+        {"id": "cratic", "label": "-cratic"},
+        {"id": "dictional", "label": "-dictional"},
+        {"id": "form", "label": "-form"},
+        {"id": "tract", "label": "-tract"},
+        {"id": "voke", "label": "-voke"},
+    ]
     
-    # 格式化給 React 的資料
-    prefixes = [{"id": p, "label": f"{p}-"} for p in sorted(df['p'].unique())]
-    roots = [{"id": r, "label": f"-{r}"} for r in sorted(df['r'].unique())]
+    # 字典匹配資料
+    dictionary = [
+        {
+            "p_id": "bureau", "r_id": "cratic",
+            "word": "bureaucratic",
+            "phonetic": "/ˌbjʊərəˈkrætɪk/",
+            "combo_display": "BUREAU + CRATIC",
+            # 語源拆解區資料
+            "root_highlight": "cratic",
+            "root_meaning": "統治/力量",
+            "final_meaning": "官僚體制的",
+            # 語感區資料
+            "vibe": "描述一種依賴複雜程序、層級嚴密但有時顯得僵化的行政系統。"
+        },
+        {
+            "p_id": "dis", "r_id": "tract",
+            "word": "distract",
+            "phonetic": "/dɪˈstrækt/",
+            "combo_display": "DIS + TRACT",
+            "root_highlight": "tract",
+            "root_meaning": "抽/拉",
+            "final_meaning": "使分心",
+            "vibe": "像是有東西硬生生把你從軌道上拉走。"
+        },
+         {
+            "p_id": "re", "r_id": "voke",
+            "word": "revoke",
+            "phonetic": "/rɪˈvoʊk/",
+            "combo_display": "RE + VOKE",
+            "root_highlight": "voke",
+            "root_meaning": "喊叫",
+            "final_meaning": "撤銷",
+            "vibe": "把說出去的話喊回來，使其無效。"
+        },
+        {
+            "p_id": "trans", "r_id": "form",
+            "word": "transform",
+            "phonetic": "/trænsˈfɔːrm/",
+            "combo_display": "TRANS + FORM",
+            "root_highlight": "form",
+            "root_meaning": "形狀",
+            "final_meaning": "轉化/變形",
+            "vibe": "徹底的改變，像毛毛蟲變蝴蝶。"
+        }
+        # 可以繼續添加更多組合...
+    ]
     
-    # 將每一筆資料都變成字典格式
-    dictionary = []
-    for _, row in df.iterrows():
-        dictionary.append({
-            "combo": [row['p'], row['r']],
-            "word": row['word'],
-            "definition": row['definition'],
-            "phonetic": row['phonetic'],
-            "root_mean": row['meaning'],
-            "vibe": row['vibe'],
-            "display": f"{row['p']} + {row['r']}"
-        })
-        
     return {"prefixes": prefixes, "roots": roots, "dictionary": dictionary}
 
 # ==========================================
-# 2. React 滾輪 + 字卡整合 (The Frontend)
+# 2. React 前端元件 (包含滾輪與字卡)
 # ==========================================
-def render_unified_interface(payload):
+def render_ui(payload):
     json_data = json.dumps(payload)
     
     html_code = """
@@ -67,142 +92,155 @@ def render_unified_interface(payload):
         <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
         <script src="https://cdn.tailwindcss.com"></script>
         <style>
+            /* 隱藏滾動條 */
             .no-scrollbar::-webkit-scrollbar { display: none; }
             .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
             
-            /* 滾輪遮罩優化：讓邊緣更透明，減少視覺壓迫 */
+            /* 滾輪上下遮罩 */
             .wheel-mask {
-                background: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 25%, rgba(255,255,255,0) 75%, rgba(255,255,255,1) 100%);
+                background: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 30%, rgba(255,255,255,0) 70%, rgba(255,255,255,1) 100%);
             }
             
-            /* 字卡滑入動畫 */
-            .card-enter {
-                animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-            }
-            @keyframes slideUp {
-                from { opacity: 0; transform: translateY(30px); }
-                to { opacity: 1; transform: translateY(0); }
+            /* 字卡進入動畫 */
+            .card-enter { animation: slideUpFade 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+            @keyframes slideUpFade {
+                from { opacity: 0; transform: translateY(20px) scale(0.98); }
+                to { opacity: 1; transform: translateY(0) scale(1); }
             }
         </style>
     </head>
-    <body class="bg-gray-50">
+    <body class="bg-transparent">
         <div id="root"></div>
         <script type="text/babel">
             const { useState, useEffect, useRef } = React;
             const DATA = REPLACE_ME;
+            const ITEM_HEIGHT = 60; // 滾輪每個選項的高度
 
+            // --- 滾輪元件 ---
             const Wheel = ({ items, onSelect, currentId }) => {
                 const ref = useRef(null);
                 
-                // 處理滾動邏輯
                 const handleScroll = () => {
                     if (!ref.current) return;
-                    const idx = Math.round(ref.current.scrollTop / 50);
+                    const idx = Math.round(ref.current.scrollTop / ITEM_HEIGHT);
                     if (items[idx] && items[idx].id !== currentId) {
                         onSelect(items[idx].id);
                     }
                 };
 
                 return (
-                    <div className="relative w-32 h-36 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                        {/* 選中高亮條 */}
-                        <div className="absolute top-[50px] left-0 w-full h-[50px] bg-blue-50/50 border-y border-blue-100 pointer-events-none"></div>
+                    <div className="relative w-40 h-[180px] bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                        {/* 中央選取框 */}
+                        <div className="absolute top-[60px] left-0 w-full h-[60px] bg-blue-50/80 border-y border-blue-100 pointer-events-none"></div>
                         
-                        {/* 滾動內容 */}
+                        {/* 滾動區域 */}
                         <div 
                             ref={ref} 
                             onScroll={handleScroll} 
-                            className="h-full overflow-y-scroll snap-y snap-mandatory no-scrollbar py-[50px]"
+                            className="h-full overflow-y-scroll snap-y snap-mandatory no-scrollbar py-[60px]"
                         >
                             {items.map(item => (
-                                <div key={item.id} className="h-[50px] flex items-center justify-center snap-center font-bold text-xl text-gray-600">
+                                <div key={item.id} className="h-[60px] flex items-center justify-center snap-center font-bold text-xl text-gray-600">
                                     {item.label}
                                 </div>
                             ))}
                         </div>
-                        
-                        {/* 漸變遮罩 */}
+                        {/* 遮罩 */}
                         <div className="absolute inset-0 wheel-mask pointer-events-none"></div>
                     </div>
                 );
             };
 
+            // --- 主應用元件 ---
             const App = () => {
-                const [p, setP] = useState(DATA.prefixes[0].id);
-                const [r, setR] = useState(DATA.roots[0].id);
+                // 預設選中 bureaucratic 的組合
+                const [p, setP] = useState("bureau");
+                const [r, setR] = useState("cratic");
                 const [match, setMatch] = useState(null);
 
+                // 尋找匹配
                 useEffect(() => {
-                    const found = DATA.dictionary.find(d => d.combo[0] === p && d.combo[1] === r);
+                    const found = DATA.dictionary.find(d => d.p_id === p && d.r_id === r);
                     setMatch(found);
                 }, [p, r]);
 
                 return (
-                    <div className="pt-6 pb-20 px-6 max-w-4xl mx-auto flex flex-col items-center">
+                    <div className="py-10 px-4 flex flex-col items-center font-sans">
                         
-                        {/* 滾輪控制區：使用 flex-col 確保與下方字卡徹底切開 */}
-                        <div className="flex items-center gap-6 mb-16 relative z-10">
+                        {/* 1. 雙欄滾輪區 */}
+                        <div className="flex items-center gap-6 mb-12 relative z-10">
                             <Wheel items={DATA.prefixes} onSelect={setP} currentId={p} />
-                            <div className="text-3xl text-gray-300 font-light">+</div>
+                            <div className="text-4xl text-gray-300 font-light">+</div>
                             <Wheel items={DATA.roots} onSelect={setR} currentId={r} />
                         </div>
 
-                        {/* 字卡顯示區：設定為 w-full 並增加 padding 防止重疊 */}
-                        <div className="w-full min-h-[400px] relative z-0">
+                        {/* 2. 結果字卡區 (完美復刻樣式) */}
+                        <div className="w-full max-w-3xl relative z-0 min-h-[400px]">
                         {match ? (
-                            <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-gray-100 card-enter">
-                                {/* 字卡頭部 */}
-                                <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-10 text-white">
-                                    <div className="flex justify-between items-start">
-                                        <div className="space-y-2">
-                                            <h1 className="text-6xl font-black tracking-tight drop-shadow-sm">
+                            <div className="bg-white rounded-[2.5rem] shadow-xl overflow-hidden border border-gray-100 card-enter">
+                                {/* 藍色標題頭部 */}
+                                <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-8 sm:p-10 text-white relative overflow-hidden">
+                                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative z-10">
+                                        <div>
+                                            <h1 className="text-5xl sm:text-6xl font-black tracking-tight drop-shadow-sm mb-2">
                                                 {match.word}
                                             </h1>
-                                            <p className="text-blue-100 text-2xl font-mono tracking-wider opacity-90">
-                                                /{match.phonetic}/
+                                            <p className="text-blue-100 text-xl sm:text-2xl font-mono tracking-wider opacity-90">
+                                                {match.phonetic}
                                             </p>
                                         </div>
-                                        <div className="bg-white/15 backdrop-blur-xl border border-white/20 px-6 py-2 rounded-2xl font-bold uppercase tracking-[0.2em] text-xs shadow-sm">
-                                            {match.display}
+                                        <div className="bg-white/20 backdrop-blur-md border border-white/20 px-5 py-2 rounded-full font-bold uppercase tracking-widest text-sm shadow-sm whitespace-nowrap">
+                                            {match.combo_display}
                                         </div>
                                     </div>
                                 </div>
                                 
-                                {/* 字卡內容 */}
-                                <div className="p-10 grid md:grid-cols-2 gap-10 bg-white">
-                                    <div className="space-y-4">
-                                        <div className="flex items-center gap-2 text-gray-400">
-                                            <span className="text-lg">🗝️</span>
+                                {/* 下方雙欄內容 */}
+                                <div className="p-8 sm:p-10 grid md:grid-cols-2 gap-8 bg-white">
+                                    
+                                    {/* 左側：語源拆解 (黃色調) */}
+                                    <div className="space-y-3">
+                                        <div className="flex items-center gap-2 text-gray-400 mb-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                                              <path fillRule="evenodd" d="M15.75 1.5a6.75 6.75 0 0 0-6.651 7.906c.067.39-.032.717-.221.906l-6.5 6.499a3 3 0 0 0-.878 2.121v2.818c0 .414.336.75.75.75H6a.75.75 0 0 0 .75-.75v-1.5h1.5a.75.75 0 0 0 .75-.75v-1.5h1.5a.75.75 0 0 0 .75-.75v-1.5h1.5a.75.75 0 0 0 .75-.75c.311-.31.637-.408 1.028-.34a6.75 6.75 0 1 0 1.002-1.003ZM16.5 5.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" clipRule="evenodd" />
+                                            </svg>
                                             <h3 className="font-bold uppercase tracking-widest text-xs">Etymology Breakdown</h3>
                                         </div>
-                                        <div className="bg-amber-50/50 p-7 rounded-[2rem] border-l-4 border-amber-400">
-                                            <p className="text-amber-900 text-2xl leading-snug">
-                                                The root <span className="font-black text-amber-600 underline decoration-amber-200 underline-offset-4">"{r}"</span> means <span className="font-bold italic">{match.root_mean}</span>.
+                                        {/* 黃色區塊 */}
+                                        <div className="bg-amber-50/80 p-6 rounded-[2rem] border-l-4 border-amber-400 h-full">
+                                            <p className="text-amber-900 text-xl leading-snug">
+                                                The root <span className="font-black text-amber-600 mx-1 underline decoration-amber-300 underline-offset-4">"{match.root_highlight}"</span> means <span className="font-bold italic">{match.root_meaning}</span>.
                                             </p>
-                                            <div className="mt-4 pt-4 border-t border-amber-200/50 text-amber-800 text-lg">
-                                                <span className="opacity-60 text-sm block mb-1">MEANING</span>
-                                                <span className="font-bold">{match.definition}</span>
+                                            <div className="mt-6 pt-4 border-t border-amber-200/50">
+                                                <span className="text-amber-800/70 text-[10px] font-bold uppercase tracking-widest block mb-1">MEANING</span>
+                                                <span className="text-amber-900 font-bold text-lg">{match.final_meaning}</span>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="space-y-4">
-                                        <div className="flex items-center gap-2 text-gray-400">
-                                            <span className="text-lg">🎧</span>
+                                    {/* 右側：母語語感 (藍色調) */}
+                                    <div className="space-y-3">
+                                        <div className="flex items-center gap-2 text-gray-400 mb-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                                              <path d="M13.5 4.06c0-1.336-1.616-2.005-2.56-1.06l-4.5 4.5H4.508c-1.141 0-2.318.664-2.66 1.905A9.76 9.76 0 0 0 1.5 12c0 .898.121 1.768.35 2.595.341 1.24 1.518 1.905 2.659 1.905h1.93l4.5 4.5c.945.945 2.561.276 2.561-1.06V4.06ZM18.584 5.106a.75.75 0 0 1 1.06 0c3.808 3.807 3.808 9.98 0 13.788a.75.75 0 1 1-1.06-1.06 2.75 2.75 0 0 0 0-11.668.75.75 0 0 1 0-1.06Z" />
+                                              <path d="M15.932 7.757a.75.75 0 0 1 1.061 0 6 6 0 0 1 0 8.486.75.75 0 0 1-1.06-1.061 4.5 4.5 0 0 0 0-6.364.75.75 0 0 1 0-1.06Z" />
+                                            </svg>
                                             <h3 className="font-bold uppercase tracking-widest text-xs">Native Vibe</h3>
                                         </div>
-                                        <div className="bg-blue-50/50 p-7 rounded-[2rem] border-l-4 border-blue-400 h-full">
+                                        {/* 藍色區塊 */}
+                                        <div className="bg-blue-50/80 p-6 rounded-[2rem] border-l-4 border-blue-400 h-full flex items-center">
                                             <p className="text-blue-900 text-xl leading-relaxed italic font-medium">
-                                                "{match.vibe}"
+                                                “{match.vibe}”
                                             </p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         ) : (
-                            <div className="h-[350px] border-4 border-dashed border-gray-200 rounded-[3rem] flex flex-col items-center justify-center text-gray-300 space-y-4 bg-white/50">
-                                <div className="text-5xl animate-pulse">🧬</div>
-                                <span className="text-xl font-semibold tracking-wide">Spin the wheels to decode...</span>
+                            // 未匹配時的佔位符
+                            <div className="h-[300px] border-4 border-dashed border-gray-200 rounded-[2.5rem] flex flex-col items-center justify-center text-gray-300 space-y-4 bg-white/50">
+                                <div className="text-5xl animate-pulse opacity-50">🧬</div>
+                                <span className="text-xl font-semibold tracking-wide">Spin to decode...</span>
                             </div>
                         )}
                         </div>
@@ -217,17 +255,27 @@ def render_unified_interface(payload):
     </html>
     """.replace("REPLACE_ME", json_data)
     
-    # 高度調整
+    # 設定足夠的高度以顯示完整內容
     components.html(html_code, height=850, scrolling=False)
+
 # ==========================================
-# 3. 啟動 (The Launch)
+# 3. 主程式執行
 # ==========================================
 def main():
-    st.title("🧬 Etymon Decoder 2.0")
-    st.markdown("轉動滾輪即時解碼單字語源與語感。")
+    # 隱藏 Streamlit 預設元素，讓畫面更乾淨
+    st.markdown("""
+        <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            .stApp { background-color: #F8F9FA; }
+            .block-container { padding-top: 1rem; padding-bottom: 1rem; }
+        </style>
+    """, unsafe_allow_html=True)
     
-    data_payload = get_full_data()
-    render_unified_interface(data_payload)
+    st.title("🧬 Etymon Decoder")
+    
+    data = get_data()
+    render_ui(data)
 
 if __name__ == "__main__":
     main()
