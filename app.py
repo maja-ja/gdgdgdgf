@@ -55,14 +55,19 @@ def render_unified_interface(payload):
         <script src="https://cdn.tailwindcss.com"></script>
         <style>
             .no-scrollbar::-webkit-scrollbar { display: none; }
+            .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+            
+            /* 滾輪遮罩優化：讓邊緣更透明，減少視覺壓迫 */
             .wheel-mask {
-                background: linear-gradient(180deg, white 0%, transparent 40%, transparent 60%, white 100%);
+                background: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 25%, rgba(255,255,255,0) 75%, rgba(255,255,255,1) 100%);
             }
+            
+            /* 字卡滑入動畫 */
             .card-enter {
-                animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+                animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
             }
             @keyframes slideUp {
-                from { opacity: 0; transform: translateY(20px); }
+                from { opacity: 0; transform: translateY(30px); }
                 to { opacity: 1; transform: translateY(0); }
             }
         </style>
@@ -75,20 +80,35 @@ def render_unified_interface(payload):
 
             const Wheel = ({ items, onSelect, currentId }) => {
                 const ref = useRef(null);
+                
+                // 處理滾動邏輯
                 const handleScroll = () => {
+                    if (!ref.current) return;
                     const idx = Math.round(ref.current.scrollTop / 50);
-                    if (items[idx] && items[idx].id !== currentId) onSelect(items[idx].id);
+                    if (items[idx] && items[idx].id !== currentId) {
+                        onSelect(items[idx].id);
+                    }
                 };
+
                 return (
-                    <div className="relative w-32 h-40 bg-white rounded-xl shadow-inner border overflow-hidden">
-                        <div className="absolute top-1/2 left-0 w-full h-10 -translate-y-1/2 bg-blue-50 border-y border-blue-200 pointer-events-none"></div>
-                        <div ref={ref} onScroll={handleScroll} className="h-full overflow-y-scroll snap-y snap-mandatory no-scrollbar py-16">
+                    <div className="relative w-32 h-36 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                        {/* 選中高亮條 */}
+                        <div className="absolute top-[50px] left-0 w-full h-[50px] bg-blue-50/50 border-y border-blue-100 pointer-events-none"></div>
+                        
+                        {/* 滾動內容 */}
+                        <div 
+                            ref={ref} 
+                            onScroll={handleScroll} 
+                            className="h-full overflow-y-scroll snap-y snap-mandatory no-scrollbar py-[50px]"
+                        >
                             {items.map(item => (
-                                <div key={item.id} className="h-[50px] flex items-center justify-center snap-center font-bold text-lg text-gray-700">
+                                <div key={item.id} className="h-[50px] flex items-center justify-center snap-center font-bold text-xl text-gray-600">
                                     {item.label}
                                 </div>
                             ))}
                         </div>
+                        
+                        {/* 漸變遮罩 */}
                         <div className="absolute inset-0 wheel-mask pointer-events-none"></div>
                     </div>
                 );
@@ -105,46 +125,61 @@ def render_unified_interface(payload):
                 }, [p, r]);
 
                 return (
-                    /* 加大 pt-12 和 space-y-16 以徹底拉開滾輪與字卡的距離 */
-                    <div className="pt-12 pb-16 px-6 max-w-4xl mx-auto space-y-16">
+                    <div className="pt-6 pb-20 px-6 max-w-4xl mx-auto flex flex-col items-center">
                         
-                        {/* 滾輪區域 */}
-                        <div className="flex justify-center items-center gap-8">
+                        {/* 滾輪控制區：使用 flex-col 確保與下方字卡徹底切開 */}
+                        <div className="flex items-center gap-6 mb-16 relative z-10">
                             <Wheel items={DATA.prefixes} onSelect={setP} currentId={p} />
-                            <div className="text-4xl text-gray-300 font-light">+</div>
+                            <div className="text-3xl text-gray-300 font-light">+</div>
                             <Wheel items={DATA.roots} onSelect={setR} currentId={r} />
                         </div>
 
-                        {/* 動態字卡區域：pt-8 提供更多頂部空間 */}
-                        <div className="min-h-[400px] pt-8 relative">
+                        {/* 字卡顯示區：設定為 w-full 並增加 padding 防止重疊 */}
+                        <div className="w-full min-h-[400px] relative z-0">
                         {match ? (
-                            <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100 card-enter">
-                                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-8 text-white">
-                                    <div className="flex justify-between items-center">
-                                        <div>
-                                            <h1 className="text-5xl font-black tracking-tight">{match.word}</h1>
-                                            <p className="text-blue-100 text-xl mt-2 font-mono">/{match.phonetic}/</p>
+                            <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-gray-100 card-enter">
+                                {/* 字卡頭部 */}
+                                <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-10 text-white">
+                                    <div className="flex justify-between items-start">
+                                        <div className="space-y-2">
+                                            <h1 className="text-6xl font-black tracking-tight drop-shadow-sm">
+                                                {match.word}
+                                            </h1>
+                                            <p className="text-blue-100 text-2xl font-mono tracking-wider opacity-90">
+                                                /{match.phonetic}/
+                                            </p>
                                         </div>
-                                        <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-full font-bold uppercase tracking-widest text-sm border border-white/30">
+                                        <div className="bg-white/15 backdrop-blur-xl border border-white/20 px-6 py-2 rounded-2xl font-bold uppercase tracking-[0.2em] text-xs shadow-sm">
                                             {match.display}
                                         </div>
                                     </div>
                                 </div>
                                 
-                                <div className="p-8 grid md:grid-cols-2 gap-8 bg-white">
+                                {/* 字卡內容 */}
+                                <div className="p-10 grid md:grid-cols-2 gap-10 bg-white">
                                     <div className="space-y-4">
-                                        <h3 className="text-gray-400 font-bold uppercase tracking-wider text-sm">🗝️ Etymology Breakdown</h3>
-                                        <div className="bg-amber-50 p-6 rounded-2xl border-l-4 border-amber-400">
-                                            <p className="text-amber-900 text-xl leading-relaxed">
-                                                The root <span className="font-black underline">"{r}"</span> means <span className="font-bold text-amber-700">{match.root_mean}</span>.
+                                        <div className="flex items-center gap-2 text-gray-400">
+                                            <span className="text-lg">🗝️</span>
+                                            <h3 className="font-bold uppercase tracking-widest text-xs">Etymology Breakdown</h3>
+                                        </div>
+                                        <div className="bg-amber-50/50 p-7 rounded-[2rem] border-l-4 border-amber-400">
+                                            <p className="text-amber-900 text-2xl leading-snug">
+                                                The root <span className="font-black text-amber-600 underline decoration-amber-200 underline-offset-4">"{r}"</span> means <span className="font-bold italic">{match.root_mean}</span>.
                                             </p>
-                                            <p className="text-amber-700 mt-2 font-medium">Definition: {match.definition}</p>
+                                            <div className="mt-4 pt-4 border-t border-amber-200/50 text-amber-800 text-lg">
+                                                <span className="opacity-60 text-sm block mb-1">MEANING</span>
+                                                <span className="font-bold">{match.definition}</span>
+                                            </div>
                                         </div>
                                     </div>
+
                                     <div className="space-y-4">
-                                        <h3 className="text-gray-400 font-bold uppercase tracking-wider text-sm">🎧 Native Vibe</h3>
-                                        <div className="bg-blue-50 p-6 rounded-2xl border-l-4 border-blue-400 h-full">
-                                            <p className="text-blue-900 text-lg leading-relaxed italic">
+                                        <div className="flex items-center gap-2 text-gray-400">
+                                            <span className="text-lg">🎧</span>
+                                            <h3 className="font-bold uppercase tracking-widest text-xs">Native Vibe</h3>
+                                        </div>
+                                        <div className="bg-blue-50/50 p-7 rounded-[2rem] border-l-4 border-blue-400 h-full">
+                                            <p className="text-blue-900 text-xl leading-relaxed italic font-medium">
                                                 "{match.vibe}"
                                             </p>
                                         </div>
@@ -152,8 +187,9 @@ def render_unified_interface(payload):
                                 </div>
                             </div>
                         ) : (
-                            <div className="h-[300px] border-4 border-dashed border-gray-200 rounded-3xl flex items-center justify-center text-gray-400 text-xl font-medium">
-                                🌀 Spin the wheels to decode a word...
+                            <div className="h-[350px] border-4 border-dashed border-gray-200 rounded-[3rem] flex flex-col items-center justify-center text-gray-300 space-y-4 bg-white/50">
+                                <div className="text-5xl animate-pulse">🧬</div>
+                                <span className="text-xl font-semibold tracking-wide">Spin the wheels to decode...</span>
                             </div>
                         )}
                         </div>
@@ -168,9 +204,8 @@ def render_unified_interface(payload):
     </html>
     """.replace("REPLACE_ME", json_data)
     
-    # 高度調整為 800
-    components.html(html_code, height=800, scrolling=False)
-
+    # 高度調整
+    components.html(html_code, height=850, scrolling=False)
 # ==========================================
 # 3. 啟動 (The Launch)
 # ==========================================
