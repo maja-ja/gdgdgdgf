@@ -189,6 +189,6 @@ def render_keyboard_reactor(payload):
 # 3. Streamlit 運行
 # ==========================================
 st.set_page_config(page_title="Etymon Reactor", layout="wide")
-st.title("🔬 語義解碼反應爐 v3.0")
+st.title("🧬 Etymon Decoder 2.0")
 payload = get_pro_data()
 render_keyboard_reactor(payload)
