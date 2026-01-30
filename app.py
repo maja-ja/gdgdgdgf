@@ -1,233 +1,80 @@
 import streamlit as st
-import pandas as pd
-import json
-import streamlit.components.v1 as components
 
-# ==========================================
-# 1. 核心配置與資料 (The Brain)
-# ==========================================
-st.set_page_config(page_title="Etymon Decoder Hybrid", layout="wide")
+# --- 1. 獨立學科模組 (每個學科一個 def) ---
 
-@st.cache_data
-def get_full_data():
-    # 這裡包含所有字卡需要的細節資訊
-    data = [
-        # --- AI 科技 (AI Technology) ---
-        {"word": "neuromorphic", "p": "neuro", "r": "morphic", "meaning": "形狀/型態", "definition": "類神經型態的", "vibe": "模擬人類大腦神經元結構的運算方式，試圖讓機器擁有生物級的思考效率。", "phonetic": "ˌnjʊəroʊˈmɔːrfɪk"},
-        {"word": "hyperdimensional", "p": "hyper", "r": "dimensional", "meaning": "維度/測量", "definition": "高維空間的", "vibe": "在極高維度的向量空間中運算資料，是當代大型語言模型（LLM）處理語義的核心邏輯。", "phonetic": "ˌhaɪpərdɪˈmɛnʃənl"},
-        {"word": "autopoietic", "p": "auto", "r": "poietic", "meaning": "製作/創造", "definition": "自我生成的", "vibe": "描述一個系統能夠自我維護、自我產生。在強人工智慧（AGI）討論中，代表系統具備自我演化的生命力。", "phonetic": "ˌɔːtoʊpɔɪˈɛtɪk"},
-        
-        # --- 高階寫作 (Advanced Writing/Literary Theory) ---
-        {"word": "intertextuality", "p": "inter", "r": "textual", "meaning": "編織/文本", "definition": "文本互涉", "vibe": "強調沒有任何作品是孤立的，所有的文章都是由其他文本交織而成的『拼貼物』。", "phonetic": "ˌɪntərˌtɛkstʃuˈæləti"},
-        {"word": "epistemological", "p": "epistemo", "r": "logical", "meaning": "學說/研究", "definition": "認識論的", "vibe": "探討知識的核心本質。在高階評論中，用來質疑我們『如何知道我們所知道的事』。", "phonetic": "ɪˌpɪstəməˈlɒdʒɪkl"},
-        {"word": "defamiliarization", "p": "de", "r": "familiar", "meaning": "熟悉/家庭", "definition": "陌生化", "vibe": "文學創作的高階技巧：刻意用奇怪的方式描述平凡的事物，強迫讀者重新審視世界。", "phonetic": "diːfəˌmɪljəraɪˈzeɪʃn"},
-        
-        # --- 醫學 (Medicine) ---
-        {"word": "idiopathic", "p": "idio", "r": "pathic", "meaning": "痛苦/疾病", "definition": "特發性的 (病因不明)", "vibe": "當醫生帥氣地說出這個詞時，其實是在優雅地承認：『我們目前還不知道為什麼會生這個病。』", "phonetic": "ˌɪdiəˈpæθɪk"},
-        
-        # --- 法研 (Legal Research) ---
-        {"word": "jurisdictional", "p": "juris", "r": "dictional", "meaning": "說話/宣告", "definition": "管轄權的", "vibe": "法律攻防的起手式。如果法律效力不在該管轄區內，後面的論點再強都沒有意義。", "phonetic": "ˌdʒʊərɪsˈdɪkʃənl"},
-        
-        # --- 公務 (Public Service/Bureaucracy) ---
-        {"word": "bureaucratic", "p": "bureau", "r": "cratic", "meaning": "統治/力量", "definition": "官僚體制的", "vibe": "描述一種依賴複雜程序、層級嚴密但有時顯得僵化的行政系統。", "phonetic": "ˌbjʊərəˈkrætɪk"}
-    ]
-    df = pd.DataFrame(data)
-    
-    # 格式化給 React 的資料
-    prefixes = [{"id": p, "label": f"{p}-"} for p in sorted(df['p'].unique())]
-    roots = [{"id": r, "label": f"-{r}"} for r in sorted(df['r'].unique())]
-    
-    # 將每一筆資料都變成字典格式
-    dictionary = []
-    for _, row in df.iterrows():
-        dictionary.append({
-            "combo": [row['p'], row['r']],
-            "word": row['word'],
-            "definition": row['definition'],
-            "phonetic": row['phonetic'],
-            "root_mean": row['meaning'],
-            "vibe": row['vibe'],
-            "display": f"{row['p']} + {row['r']}"
-        })
-        
-    return {"prefixes": prefixes, "roots": roots, "dictionary": dictionary}
+# 國小模組
+def elementary_chinese(): st.title("國小 - 國語宇宙"); st.info("專屬邏輯：生字解碼、注音符號 AI 輔助")
+def elementary_english(): st.title("國小 - 英語宇宙"); st.info("專屬邏輯：Phonics 語音模組")
+def elementary_math(): st.title("國小 - 數學宇宙"); st.info("專屬邏輯：基礎四則運算視覺化")
 
-# ==========================================
-# 2. React 滾輪 + 字卡整合 (The Frontend)
-# ==========================================
-def render_unified_interface(payload):
-    json_data = json.dumps(payload)
-    
-    html_code = """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-        <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-        <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-        <script src="https://cdn.tailwindcss.com"></script>
-        <style>
-            .no-scrollbar::-webkit-scrollbar { display: none; }
-            .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-            
-            /* 滾輪遮罩優化：讓邊緣更透明，減少視覺壓迫 */
-            .wheel-mask {
-                background: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 25%, rgba(255,255,255,0) 75%, rgba(255,255,255,1) 100%);
-            }
-            
-            /* 字卡滑入動畫 */
-            .card-enter {
-                animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-            }
-            @keyframes slideUp {
-                from { opacity: 0; transform: translateY(30px); }
-                to { opacity: 1; transform: translateY(0); }
-            }
-        </style>
-    </head>
-    <body class="bg-gray-50">
-        <div id="root"></div>
-        <script type="text/babel">
-            const { useState, useEffect, useRef } = React;
-            const DATA = REPLACE_ME;
+# 國中模組
+def junior_chinese(): st.title("國中 - 國文宇宙"); st.info("專屬邏輯：文言文解構模組")
+def junior_english(): st.title("國中 - 英文宇宙"); st.info("專屬邏輯：基礎文法框架")
+def junior_math(): st.title("國中 - 數學宇宙"); st.info("專屬邏輯：幾何與代數運算")
+def junior_science(): st.title("國中 - 自然宇宙"); st.info("專屬邏輯：理化實驗模擬")
+def junior_social(): st.title("國中 - 社會宇宙"); st.info("專屬邏輯：歷史地理時間線")
 
-            const Wheel = ({ items, onSelect, currentId }) => {
-                const ref = useRef(null);
-                
-                // 處理滾動邏輯
-                const handleScroll = () => {
-                    if (!ref.current) return;
-                    const idx = Math.round(ref.current.scrollTop / 50);
-                    if (items[idx] && items[idx].id !== currentId) {
-                        onSelect(items[idx].id);
-                    }
-                };
+# 高中模組 (嚴選 8 個模組)
+def senior_chinese(): st.title("高中 - 國文"); st.write("核心：文學評論與古文觀止")
+def senior_english(): st.title("高中 - 英文"); st.write("核心：學測/指考單字與作文")
+def senior_math(): st.title("高中 - 數學"); st.write("核心：微積分與機率統計")
+def senior_physics(): st.title("高中 - 物理"); st.write("核心：力學與電磁學")
+def senior_chemistry(): st.title("高中 - 化學"); st.write("核心：有機化學與原子結構")
+def senior_biology(): st.title("高中 - 生物"); st.write("核心：遺傳學與細胞生物")
+def senior_earth_science(): st.title("高中 - 地科"); st.write("核心：大氣、地質與天文")
+def senior_social_science(): st.title("高中 - 社會(歷公地)"); st.write("核心：跨科議題整合")
 
-                return (
-                    <div className="relative w-32 h-36 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                        {/* 選中高亮條 */}
-                        <div className="absolute top-[50px] left-0 w-full h-[50px] bg-blue-50/50 border-y border-blue-100 pointer-events-none"></div>
-                        
-                        {/* 滾動內容 */}
-                        <div 
-                            ref={ref} 
-                            onScroll={handleScroll} 
-                            className="h-full overflow-y-scroll snap-y snap-mandatory no-scrollbar py-[50px]"
-                        >
-                            {items.map(item => (
-                                <div key={item.id} className="h-[50px] flex items-center justify-center snap-center font-bold text-xl text-gray-600">
-                                    {item.label}
-                                </div>
-                            ))}
-                        </div>
-                        
-                        {/* 漸變遮罩 */}
-                        <div className="absolute inset-0 wheel-mask pointer-events-none"></div>
-                    </div>
-                );
-            };
+# --- 2. 映射表 (將主邏輯與 def 關聯) ---
 
-            const App = () => {
-                const [p, setP] = useState(DATA.prefixes[0].id);
-                const [r, setR] = useState(DATA.roots[0].id);
-                const [match, setMatch] = useState(null);
+MODULES = {
+    "國小宇宙": {
+        "國語": elementary_chinese, "英語": elementary_english, "數學": elementary_math
+    },
+    "國中宇宙": {
+        "國文": junior_chinese, "英文": junior_english, "數學": junior_math, 
+        "自然": junior_science, "社會": junior_social
+    },
+    "高中宇宙": {
+        "國文": senior_chinese, "英文": senior_english, "數學": senior_math,
+        "物理": senior_physics, "化學": senior_chemistry, "生物": senior_biology,
+        "地科": senior_earth_science, "社會科學": senior_social_science
+    }
+}
 
-                useEffect(() => {
-                    const found = DATA.dictionary.find(d => d.combo[0] === p && d.combo[1] === r);
-                    setMatch(found);
-                }, [p, r]);
+# --- 3. 主程式 ---
 
-                return (
-                    <div className="pt-6 pb-20 px-6 max-w-4xl mx-auto flex flex-col items-center">
-                        
-                        {/* 滾輪控制區：使用 flex-col 確保與下方字卡徹底切開 */}
-                        <div className="flex items-center gap-6 mb-16 relative z-10">
-                            <Wheel items={DATA.prefixes} onSelect={setP} currentId={p} />
-                            <div className="text-3xl text-gray-300 font-light">+</div>
-                            <Wheel items={DATA.roots} onSelect={setR} currentId={r} />
-                        </div>
-
-                        {/* 字卡顯示區：設定為 w-full 並增加 padding 防止重疊 */}
-                        <div className="w-full min-h-[400px] relative z-0">
-                        {match ? (
-                            <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-gray-100 card-enter">
-                                {/* 字卡頭部 */}
-                                <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-10 text-white">
-                                    <div className="flex justify-between items-start">
-                                        <div className="space-y-2">
-                                            <h1 className="text-6xl font-black tracking-tight drop-shadow-sm">
-                                                {match.word}
-                                            </h1>
-                                            <p className="text-blue-100 text-2xl font-mono tracking-wider opacity-90">
-                                                /{match.phonetic}/
-                                            </p>
-                                        </div>
-                                        <div className="bg-white/15 backdrop-blur-xl border border-white/20 px-6 py-2 rounded-2xl font-bold uppercase tracking-[0.2em] text-xs shadow-sm">
-                                            {match.display}
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                {/* 字卡內容 */}
-                                <div className="p-10 grid md:grid-cols-2 gap-10 bg-white">
-                                    <div className="space-y-4">
-                                        <div className="flex items-center gap-2 text-gray-400">
-                                            <span className="text-lg">🗝️</span>
-                                            <h3 className="font-bold uppercase tracking-widest text-xs">Etymology Breakdown</h3>
-                                        </div>
-                                        <div className="bg-amber-50/50 p-7 rounded-[2rem] border-l-4 border-amber-400">
-                                            <p className="text-amber-900 text-2xl leading-snug">
-                                                The root <span className="font-black text-amber-600 underline decoration-amber-200 underline-offset-4">"{r}"</span> means <span className="font-bold italic">{match.root_mean}</span>.
-                                            </p>
-                                            <div className="mt-4 pt-4 border-t border-amber-200/50 text-amber-800 text-lg">
-                                                <span className="opacity-60 text-sm block mb-1">MEANING</span>
-                                                <span className="font-bold">{match.definition}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        <div className="flex items-center gap-2 text-gray-400">
-                                            <span className="text-lg">🎧</span>
-                                            <h3 className="font-bold uppercase tracking-widest text-xs">Native Vibe</h3>
-                                        </div>
-                                        <div className="bg-blue-50/50 p-7 rounded-[2rem] border-l-4 border-blue-400 h-full">
-                                            <p className="text-blue-900 text-xl leading-relaxed italic font-medium">
-                                                "{match.vibe}"
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="h-[350px] border-4 border-dashed border-gray-200 rounded-[3rem] flex flex-col items-center justify-center text-gray-300 space-y-4 bg-white/50">
-                                <div className="text-5xl animate-pulse">🧬</div>
-                                <span className="text-xl font-semibold tracking-wide">Spin the wheels to decode...</span>
-                            </div>
-                        )}
-                        </div>
-                    </div>
-                );
-            };
-
-            const root = ReactDOM.createRoot(document.getElementById('root'));
-            root.render(<App />);
-        </script>
-    </body>
-    </html>
-    """.replace("REPLACE_ME", json_data)
-    
-    # 高度調整
-    components.html(html_code, height=850, scrolling=False)
-# ==========================================
-# 3. 啟動 (The Launch)
-# ==========================================
 def main():
-    st.title("🧬 Etymon Decoder 2.0")
-    st.markdown("轉動滾輪即時解碼單字語源與語感。")
+    # 網址定義
+    OLD_ERA_URL = "https://etymon-universe.streamlit.app/"
+
+    # --- 側邊欄：Gateway 樣式 ---
+    st.sidebar.title("Era Gateway")
+    c1, c2 = st.sidebar.columns(2)
+    with c1:
+        if st.button("舊世代", use_container_width=True):
+            st.components.v1.html(f"<script>window.open('{OLD_ERA_URL}', '_self')</script>", height=0)
+    with c2:
+        st.button("新世代", disabled=True, use_container_width=True)
     
-    data_payload = get_full_data()
-    render_unified_interface(data_payload)
+    st.sidebar.markdown(f'<a href="{OLD_ERA_URL}" target="_self" style="color: #58a6ff; text-decoration: none;">返回舊世代宇宙</a>', unsafe_allow_html=True)
+    st.sidebar.markdown("---")
+
+    # --- 主邏輯：學層選擇 ---
+    level = st.sidebar.selectbox("切換教育宇宙", ["請選擇學段"] + list(MODULES.keys()) + ["🔄 重新開始"])
+
+    if level == "🔄 重新開始":
+        st.rerun()
+
+    if level == "請選擇學段":
+        st.title("✨ 新世代學科模組系統")
+        st.write("請選擇左側學段開始。")
+    else:
+        # --- 次級邏輯：科目選擇 ---
+        subjects = MODULES[level]
+        selected_subject = st.sidebar.radio("選擇學科模組", list(subjects.keys()))
+        
+        # --- 執行對應的獨立 def ---
+        subjects[selected_subject]()
 
 if __name__ == "__main__":
     main()
