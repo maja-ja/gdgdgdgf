@@ -252,9 +252,11 @@ def main():
         # 佈局：左邊是核心資訊，右邊是語感與發音
         c1, c2 = st.columns([2, 1])
         
+        # 找到這一段並確保格式正確
         with c1:
-            st.markdown(f"""
-            <div style="background-color:white; padding:30px; border-radius:20px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
+            # 建議將 HTML 字串先存在變數，再餵給 st.markdown
+            card_html = f"""
+            <div style="background-color:white; padding:30px; border-radius:20px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #E3F2FD;">
                 <h1 style="margin:0; font-size: 3rem; color: #1565C0;">{row['word']}</h1>
                 <div style="color:#78909C; font-size: 1.2rem; font-family: monospace; margin-bottom: 20px;">/{row['phonetic']}/</div>
                 
@@ -269,7 +271,8 @@ def main():
                     root "<b>{row['roots']}</b>" means <em>{row['meaning']}</em>.
                 </div>
             </div>
-            """, unsafe_allow_html=True)
+            """
+            st.markdown(card_html, unsafe_allow_html=True)
             
         with c2:
             st.markdown("### 🎧 Native Vibe")
