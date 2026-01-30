@@ -1,80 +1,86 @@
 import streamlit as st
 
-# --- 1. 獨立學科模組 (每個學科一個 def) ---
+# --- 1. 定義模組化學科函式 (獨立 def) ---
 
-# 國小模組
-def elementary_chinese(): st.title("國小 - 國語宇宙"); st.info("專屬邏輯：生字解碼、注音符號 AI 輔助")
-def elementary_english(): st.title("國小 - 英語宇宙"); st.info("專屬邏輯：Phonics 語音模組")
-def elementary_math(): st.title("國小 - 數學宇宙"); st.info("專屬邏輯：基礎四則運算視覺化")
+# 國小組
+def primary_chi(): st.title("國小國語"); st.write("模組內容：識字與閱讀")
+def primary_eng(): st.title("國小英語"); st.write("模組內容：聽力與口說")
+def primary_math(): st.title("國小數學"); st.write("模組內容：數與量")
 
-# 國中模組
-def junior_chinese(): st.title("國中 - 國文宇宙"); st.info("專屬邏輯：文言文解構模組")
-def junior_english(): st.title("國中 - 英文宇宙"); st.info("專屬邏輯：基礎文法框架")
-def junior_math(): st.title("國中 - 數學宇宙"); st.info("專屬邏輯：幾何與代數運算")
-def junior_science(): st.title("國中 - 自然宇宙"); st.info("專屬邏輯：理化實驗模擬")
-def junior_social(): st.title("國中 - 社會宇宙"); st.info("專屬邏輯：歷史地理時間線")
+# 國中組
+def junior_chi(): st.title("國中國文"); st.write("模組內容：古文與修辭")
+def junior_eng(): st.title("國中英文"); st.write("模組內容：文法與克漏字")
+def junior_math(): st.title("國中數學"); st.write("模組內容：幾何與函數")
+def junior_sci(): st.title("國中自然"); st.write("模組內容：理化與生物")
+def junior_soc(): st.title("國中社會"); st.write("模組內容：史地與公民")
 
-# 高中模組 (嚴選 8 個模組)
-def senior_chinese(): st.title("高中 - 國文"); st.write("核心：文學評論與古文觀止")
-def senior_english(): st.title("高中 - 英文"); st.write("核心：學測/指考單字與作文")
-def senior_math(): st.title("高中 - 數學"); st.write("核心：微積分與機率統計")
-def senior_physics(): st.title("高中 - 物理"); st.write("核心：力學與電磁學")
-def senior_chemistry(): st.title("高中 - 化學"); st.write("核心：有機化學與原子結構")
-def senior_biology(): st.title("高中 - 生物"); st.write("核心：遺傳學與細胞生物")
-def senior_earth_science(): st.title("高中 - 地科"); st.write("核心：大氣、地質與天文")
-def senior_social_science(): st.title("高中 - 社會(歷公地)"); st.write("核心：跨科議題整合")
+# 高中組 (至多 8 頁)
+def senior_chi(): st.title("高中國文"); st.write("高階思辨模組")
+def senior_eng(): st.title("高中英文"); st.write("核心單字與寫作")
+def senior_math(): st.title("高中數學"); st.write("微積分與機率")
+def senior_phy(): st.title("高中物理"); st.write("力學實驗模擬")
+def senior_che(): st.title("高中化學"); st.write("元素週期表應用")
+def senior_bio(): st.title("高中生物"); st.write("遺傳與生命科學")
+def senior_earth(): st.title("高中地科"); st.write("天文與大氣")
+def senior_integrated(): st.title("高中社會跨科"); st.write("歷公地整合議題")
 
-# --- 2. 映射表 (將主邏輯與 def 關聯) ---
-
-MODULES = {
-    "國小宇宙": {
-        "國語": elementary_chinese, "英語": elementary_english, "數學": elementary_math
-    },
-    "國中宇宙": {
-        "國文": junior_chinese, "英文": junior_english, "數學": junior_math, 
-        "自然": junior_science, "社會": junior_social
-    },
-    "高中宇宙": {
-        "國文": senior_chinese, "英文": senior_english, "數學": senior_math,
-        "物理": senior_physics, "化學": senior_chemistry, "生物": senior_biology,
-        "地科": senior_earth_science, "社會科學": senior_social_science
-    }
-}
-
-# --- 3. 主程式 ---
+# --- 2. 主程式 ---
 
 def main():
-    # 網址定義
+    # --- Gateway 設定 (依您截圖的需求) ---
     OLD_ERA_URL = "https://etymon-universe.streamlit.app/"
-
-    # --- 側邊欄：Gateway 樣式 ---
+    
     st.sidebar.title("Era Gateway")
     c1, c2 = st.sidebar.columns(2)
     with c1:
-        if st.button("舊世代", use_container_width=True):
+        if st.sidebar.button("舊世代", use_container_width=True):
             st.components.v1.html(f"<script>window.open('{OLD_ERA_URL}', '_self')</script>", height=0)
     with c2:
-        st.button("新世代", disabled=True, use_container_width=True)
+        st.sidebar.button("新世代", disabled=True, use_container_width=True)
     
-    st.sidebar.markdown(f'<a href="{OLD_ERA_URL}" target="_self" style="color: #58a6ff; text-decoration: none;">返回舊世代宇宙</a>', unsafe_allow_html=True)
-    st.sidebar.markdown("---")
+    st.sidebar.markdown(f'[手動進入舊宇宙]({OLD_ERA_URL})')
+    st.sidebar.divider()
 
-    # --- 主邏輯：學層選擇 ---
-    level = st.sidebar.selectbox("切換教育宇宙", ["請選擇學段"] + list(MODULES.keys()) + ["🔄 重新開始"])
+    # --- App 主選單邏輯 ---
+    
+    # 步驟 A: 選擇學層 (主選單)
+    universe = st.selectbox(
+        "🚀 請選擇教育宇宙 (主邏輯)",
+        ["請選擇", "國小宇宙", "國中宇宙", "高中宇宙", "重新開始"],
+        index=0
+    )
 
-    if level == "🔄 重新開始":
+    if universe == "重新開始":
         st.rerun()
 
-    if level == "請選擇學段":
-        st.title("✨ 新世代學科模組系統")
-        st.write("請選擇左側學段開始。")
+    if universe == "請選擇":
+        st.title("✨ 新世代學科解碼系統")
+        st.info("請使用上方選單進入對應學層。")
+    
     else:
-        # --- 次級邏輯：科目選擇 ---
-        subjects = MODULES[level]
-        selected_subject = st.sidebar.radio("選擇學科模組", list(subjects.keys()))
+        # 步驟 B: 根據學層顯示對應的 App 選單 (次級邏輯)
+        st.divider()
         
-        # --- 執行對應的獨立 def ---
-        subjects[selected_subject]()
+        if universe == "國小宇宙":
+            tab_choice = st.radio("學科模組", ["國語", "英語", "數學"], horizontal=True)
+            mapping = {"國語": primary_chi, "英語": primary_eng, "數學": primary_math}
+            mapping[tab_choice]() # 執行對應的 def
+
+        elif universe == "國中宇宙":
+            tab_choice = st.radio("學科模組", ["國文", "英文", "數學", "自然", "社會"], horizontal=True)
+            mapping = {"國文": junior_chi, "英文": junior_eng, "數學": junior_math, "自然": junior_sci, "社會": junior_soc}
+            mapping[tab_choice]()
+
+        elif universe == "高中宇宙":
+            # 高中 8 頁限制，使用 Selectbox 或 Radio 均可
+            tab_choice = st.selectbox("選擇學科頁面 (至多8頁)", 
+                                    ["國文", "英文", "數學", "物理", "化學", "生物", "地科", "社會跨科"])
+            mapping = {
+                "國文": senior_chi, "英文": senior_eng, "數學": senior_math, 
+                "物理": senior_phy, "化學": senior_che, "生物": senior_bio, 
+                "地科": senior_earth, "社會跨科": senior_integrated
+            }
+            mapping[tab_choice]()
 
 if __name__ == "__main__":
     main()
