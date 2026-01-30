@@ -29,7 +29,7 @@ def sen_civ(): st.title("⚖️ 高中公民"); st.write("專屬內容...")
 
 def main():
     # 定義跳轉網址
-    OLD_ERA_URL = "https://etymon-universe.streamlit.app/"
+    OLD_ERA_URL = "https://etymon-universe.streamlit.app"
 
     # --- Era Gateway (側邊欄) ---
     st.sidebar.title("Era Gateway")
