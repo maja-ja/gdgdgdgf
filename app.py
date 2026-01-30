@@ -133,3 +133,4 @@ def main():
         maps[sub]()
 
 if __name__ == "__main__":
+    main()
