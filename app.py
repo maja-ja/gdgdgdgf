@@ -60,86 +60,40 @@ def sen_civ(): st.title("⚖️ 高中公民"); st.success("法律、經濟與�
 # 3. 主導航與 Gateway
 # ==========================================
 def main():
-    inject_custom_css()
-    
-    # 網址定義
+    # 這是你剛才提供的「舊世代」網址
     OLD_ERA_URL = "https://etymon-universe.streamlit.app/"
     
-    # 初始化 Session State
-    if 'current_universe' not in st.session_state:
-        st.session_state.current_universe = "🏠 首頁"
-
-    # --- 側邊欄：Era Gateway ---
-    # --- 側邊欄：Era Gateway (修正穩定跳轉版) ---
     st.sidebar.title("Era Gateway")
+    c1, c2 = st.sidebar.columns(2)
     
-    # 用最簡單的 Markdown 語法做按鈕，這在雲端絕對能跳轉
-    col_a, col_b = st.sidebar.columns(2)
-    with col_a:
-        # 舊世代：直接用標準連結樣式，避免 JS 衝突
-        st.markdown(
-            f"""<a href="{OLD_ERA_URL}" target="_self" style="text-decoration:none;">
-                <div style="text-align:center; padding:8px; border:1px solid #4B4B4B; border-radius:10px; color:#FFFFFF; background-color:transparent;">
-                    🔙 舊世代
-                </div>
-            </a>""", 
-            unsafe_allow_html=True
-        )
-    with col_b:
-        # 新世代：重置目前 App 狀態
-        if st.sidebar.button("✨ 新世代", use_container_width=True, type="primary"):
-            st.session_state.current_universe = "🏠 首頁"
+    with c1:
+        # 使用你提供的「可行邏輯」實裝跳回功能
+        if st.button("舊世代", use_container_width=True):
+            js = f"window.open('{OLD_ERA_URL}', '_self')"
+            st.components.v1.html(f"<script>{js}</script>", height=0)
+            st.markdown(f"[手動返回舊宇宙]({OLD_ERA_URL})")
+            
+    with c2:
+        # 在新世代 App 裡，點擊新世代就是「回新世代首頁」
+        if st.button("新世代", type="primary", use_container_width=True):
+            if 'universe' in st.session_state: del st.session_state.universe
             st.rerun()
 
     st.sidebar.divider()
-    # --- 三大主邏輯導覽 ---
-    universe = st.sidebar.selectbox(
-        "切換教育宇宙",
-        ["🏠 首頁", "國小宇宙", "國中宇宙", "高中宇宙"],
-        index=["🏠 首頁", "國小宇宙", "國中宇宙", "高中宇宙"].index(st.session_state.current_universe)
+
+    # --- 高中 10 科按鈕邏輯 ---
+    st.write("### 🚀 高中宇宙全學科解碼")
+    sub = st.radio(
+        "選擇科目", 
+        ["國文", "英文", "數學", "生物", "化學", "地科", "物理", "地理", "歷史", "公民"], 
+        horizontal=True
     )
-    st.session_state.current_universe = universe
-
-    # --- 頁面渲染分流 ---
-    if universe == "🏠 首頁":
-        st.title("✨ 新世代全學段解碼宇宙")
-        st.markdown("""
-        ### 您好，開發者。
-        這裡已經根據您的需求將 **18 個學科** 徹底模組化。
-        * **國小**：3 個模組
-        * **國中**：5 個模組
-        * **高中**：10 個模組 (包含生物、化學、物理、地科、歷、地、公)
-        
-        請從側邊欄選擇學段，並點擊上方按鈕切換科目。
-        """)
-        st.warning("覺得讀書不好玩？那就把學科變成你親手寫出來的程式模組吧。")
-
-    elif universe == "國小宇宙":
-        sub = st.radio("選擇學科", ["國語", "英語", "數學"], horizontal=True)
-        maps = {"國語": elem_chi, "英語": elem_eng, "數學": elem_mat}
-        st.divider()
-        maps[sub]()
-
-    elif universe == "國中宇宙":
-        sub = st.radio("選擇學科", ["國文", "英文", "數學", "自然", "社會"], horizontal=True)
-        maps = {"國文": jun_chi, "英文": jun_eng, "數學": jun_mat, "自然": jun_sci, "社會": jun_soc}
-        st.divider()
-        maps[sub]()
-
-    elif universe == "高中宇宙":
-        # 完整 10 科按鈕
-        sub = st.radio(
-            "選擇學科", 
-            ["國文", "英文", "數學", "生物", "化學", "地科", "物理", "地理", "歷史", "公民"], 
-            horizontal=True
-        )
-        maps = {
-            "國文": sen_chi, "英文": sen_eng, "數學": sen_mat, "生物": sen_bio,
-            "化學": sen_che, "地科": sen_esc, "物理": sen_phy, "地理": sen_geo,
-            "歷史": sen_his, "公民": sen_civ
-        }
-        st.divider()
-        maps[sub]()
+    
+    st.divider()
+    # 執行對應 def
+    if sub == "物理": sen_phy()
+    elif sub == "化學": sen_che()
+    else: st.write(f"目前進入：高中{sub}")
 
 if __name__ == "__main__":
     main()
