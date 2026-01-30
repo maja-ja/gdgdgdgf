@@ -5,114 +5,92 @@ import time
 import json
 from io import BytesIO
 from gtts import gTTS
+import streamlit.components.v1 as components
 
 # ==========================================
-# 1. 核心配置與 CSS
+# 1. 核心視覺配置 (繼承 v2.5 靈魂)
 # ==========================================
-st.set_page_config(page_title="Etymon Universe: New Era", page_icon="🧩", layout="wide")
+st.set_page_config(page_title="Etymon Universe 3.0", page_icon="🚀", layout="wide")
 
 def inject_custom_css():
     st.markdown("""
         <style>
-            /* 保持你原本的 v2.5 視覺樣式 */
-            .breakdown-container {
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Noto+Sans+TC:wght@500;700&display=swap');
+            .subject-card {
                 font-family: 'Inter', 'Noto Sans TC', sans-serif; 
-                font-size: 1.5rem !important; 
                 background: linear-gradient(135deg, #1E88E5 0%, #1565C0 100%);
-                color: #FFFFFF; padding: 12px 25px; border-radius: 12px;
-                display: inline-block; margin: 10px 0;
+                color: white; padding: 20px; border-radius: 15px;
+                margin-bottom: 15px; box-shadow: 0 4px 15px rgba(30, 136, 229, 0.3);
             }
-            .hero-word { font-size: 3.5rem; font-weight: 900; color: #1E88E5; }
-            /* 自定義按鈕樣式 */
-            div.stButton > button:first-child { border-radius: 10px; }
+            .hero-title { font-size: 3.5rem; font-weight: 900; color: #1E88E5; text-align: center; }
         </style>
     """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. 獨立學科模組 (每個學科一個 def)
+# 2. 學科模組定義 (在這裡擴充內容)
 # ==========================================
-
-# --- 國小模組 ---
-def elem_chi(): st.title("🍎 國小國語"); st.info("新世代國語解碼邏輯載入中...")
-def elem_eng(): st.title("🔤 國小英語"); st.info("新世代英語聽力模組載入中...")
-def elem_mat(): st.title("🔢 國小數學"); st.info("新世代數學圖形模組載入中...")
-
-# --- 國中模組 ---
-def jun_chi(): st.title("📚 國中國文"); st.write("模組：文言文解構器")
-def jun_eng(): st.title("🌍 國中英文"); st.write("模組：核心文法框架")
-def jun_mat(): st.title("📐 國中數學"); st.write("模組：代數與幾何")
-def jun_sci(): st.title("🧪 國中自然"); st.write("模組：理化生實驗室")
-def jun_soc(): st.title("🏛️ 國中社會"); st.write("模組：史地整合系統")
-
-# --- 高中模組 (完整 10 科) ---
-def sen_chi(): st.title("🎭 高中國文"); st.success("高階文本思辨模組")
-def sen_eng(): st.title("📑 高中英文"); st.success("學術寫作與閱讀解碼")
-def sen_mat(): st.title("📉 高中數學"); st.success("微積分與統計分析")
-def sen_bio(): st.title("🧬 高中生物"); st.success("分子生物與遺傳解碼")
-def sen_che(): st.title("🧪 高中化學"); st.success("物質變化與有機化學")
-def sen_esc(): st.title("🪐 高中地科"); st.success("天文與大氣科學")
-def sen_phy(): st.title("⚡ 高中物理"); st.success("力學與電磁學實驗室")
-def sen_geo(): st.title("🗺️ 高中地理"); st.success("空間資訊與地理系統")
-def sen_his(): st.title("📜 高中歷史"); st.success("歷史脈絡與斷代分析")
-def sen_civ(): st.title("⚖️ 高中公民"); st.success("法律、經濟與社會研究")
+def render_subject_content(title, desc, modules):
+    st.markdown(f"<div class='subject-card'><h1>{title}</h1><p>{desc}</p></div>", unsafe_allow_html=True)
+    cols = st.columns(len(modules))
+    for i, mod in enumerate(modules):
+        with cols[i]:
+            if st.button(f"🔓 開啟 {mod}", key=f"{title}_{mod}", use_container_width=True):
+                st.balloons()
+                st.info(f"{mod} 模組解碼中...")
 
 # ==========================================
-# 3. 主導航與 Gateway
+# 3. 穩定導航系統 (防止 Redirect Loop)
 # ==========================================
 def main():
-    # 這是你剛才提供的「舊世代」網址
-    st.sidebar.title("Era Gateway")
-    
-    # 準備網址
+    inject_custom_css()
     OLD_ERA_URL = "https://etymon-universe.streamlit.app/"
-    
-    col_a, col_b = st.sidebar.columns(2)
-    
-    with col_a:
-        # 這是最穩定的方式：看起來像按鈕的 Markdown 連結
-        # target="_self" 確保在同一個標籤頁開啟，不會被瀏覽器攔截
-        st.markdown(
-            f"""
-            <a href="{OLD_ERA_URL}" target="_self" style="text-decoration: none;">
-                <div style="
-                    text-align: center;
-                    background-color: transparent;
-                    border: 1px solid #4B4B4B;
-                    padding: 6px;
-                    border-radius: 10px;
-                    color: white;
-                    font-size: 14px;
-                    cursor: pointer;">
-                    🔙 舊世代
-                </div>
-            </a>
-            """,
-            unsafe_allow_html=True
-        )
-    
-    with col_b:
-        # 新世代按鈕只做「App 內部的重置」，不涉及網址跳轉，所以不會有 Redirect 錯誤
-        if st.sidebar.button("✨ 新世代", use_container_width=True, type="primary"):
-            # 清除 Session 狀態，強迫回到首頁
-            for key in st.session_state.keys():
-                del st.session_state[key]
+
+    # --- 側邊欄 Era Gateway ---
+    st.sidebar.title("🌌 世代門戶")
+    c1, c2 = st.sidebar.columns(2)
+    with c1:
+        st.markdown(f'<a href="{OLD_ERA_URL}" target="_self" style="text-decoration:none;"><div style="text-align:center; padding:8px; border:1px solid #4B4B4B; border-radius:10px; color:white;">🔙 舊世代</div></a>', unsafe_allow_html=True)
+    with c2:
+        if st.sidebar.button("✨ 重置首頁", use_container_width=True, type="primary"):
+            st.session_state.clear()
             st.rerun()
-    
+
     st.sidebar.divider()
 
-    # --- 高中 10 科按鈕邏輯 ---
-    st.write("### 🚀 高中宇宙全學科解碼")
-    sub = st.radio(
-        "選擇科目", 
-        ["國文", "英文", "數學", "生物", "化學", "地科", "物理", "地理", "歷史", "公民"], 
-        horizontal=True
+    # --- 學段切換 ---
+    universe = st.sidebar.radio(
+        "選擇教育宇宙",
+        ["🏠 宇宙中心", "🌱 國小宇宙", "🧬 國中宇宙", "🛰️ 高中宇宙"]
     )
-    
-    st.divider()
-    # 執行對應 def
-    if sub == "物理": sen_phy()
-    elif sub == "化學": sen_che()
-    else: st.write(f"目前進入：高中{sub}")
+
+    if universe == "🏠 宇宙中心":
+        st.markdown("<div class='hero-title'>Etymon Universe 3.0</div>", unsafe_allow_html=True)
+        st.write("---")
+        st.subheader("歡迎來到新世代解碼核心")
+        st.write("我們已將原本的單字解碼技術，擴散到全台灣學子的所有學科。請由左側選擇您的學段。")
+        
+        # 視覺數據卡片
+        col1, col2, col3 = st.columns(3)
+        col1.metric("解碼學段", "3 大宇宙")
+        col2.metric("涵蓋學科", "18 門科目")
+        col3.metric("系統狀態", "穩定執行中")
+
+    elif universe == "🌱 國小宇宙":
+        sub = st.selectbox("選擇科目", ["國語", "英語", "數學"])
+        if sub == "國語": render_subject_content("🍎 國小國語", "字感與修辭解碼", ["識字規律", "成語宇宙", "作文邏輯"])
+        elif sub == "英語": render_subject_content("🔤 國小英語", "基礎音韻與語感", ["自然發音", "核心單字", "情境對話"])
+        elif sub == "數學": render_subject_content("🔢 國小數學", "圖像化邏輯運算", ["幾何拼圖", "數感訓練", "應用問題"])
+
+    elif universe == "🧬 國中宇宙":
+        sub = st.radio("選擇科目", ["國文", "英文", "數學", "自然", "社會"], horizontal=True)
+        st.divider()
+        render_subject_content(f"📚 國中{sub}", f"國中{sub}核心框架載入中", ["重點筆記", "考古題解", "考點預測"])
+
+    elif universe == "🛰️ 高中宇宙":
+        sub = st.selectbox("選擇科目", ["國文", "英文", "數學", "物理", "化學", "生物", "地科", "歷史", "地理", "公民"])
+        st.divider()
+        # 這裡就是你的高中 10 科！
+        render_subject_content(f"🚀 高中{sub}", f"高階{sub}深度思辨與學術模型", ["學測攻堅", "分科測驗", "學習歷程"])
 
 if __name__ == "__main__":
     main()
