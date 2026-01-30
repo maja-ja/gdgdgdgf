@@ -12,11 +12,24 @@ st.set_page_config(page_title="Etymon Decoder Hybrid", layout="wide")
 def get_full_data():
     # 這裡包含所有字卡需要的細節資訊
     data = [
-        {"word": "distract", "p": "dis", "r": "tract", "meaning": "抽/拉", "definition": "使分心", "vibe": "像是有東西硬生生把你從軌道上拉走。", "phonetic": "dɪˈstrækt"},
-        {"word": "transform", "p": "trans", "r": "form", "meaning": "形狀", "definition": "轉化/變形", "vibe": "徹底的改變，像毛毛蟲變蝴蝶。", "phonetic": "trænsˈfɔːrm"},
-        {"word": "attract", "p": "at", "r": "tract", "meaning": "抽/拉", "definition": "吸引", "vibe": "像磁鐵般的引力把你拉近。", "phonetic": "əˈtrækt"},
-        {"word": "predict", "p": "pre", "r": "dict", "meaning": "說", "definition": "預測", "vibe": "在事情發生前就先說出來。", "phonetic": "prɪˈdɪkt"},
-        {"word": "revoke", "p": "re", "r": "voke", "meaning": "喊叫", "definition": "撤銷", "vibe": "把說出去的話喊回來，使其無效。", "phonetic": "rɪˈvoʊk"}
+        # --- AI 科技 (AI Technology) ---
+        {"word": "neuromorphic", "p": "neuro", "r": "morphic", "meaning": "形狀/型態", "definition": "類神經型態的", "vibe": "模擬人類大腦神經元結構的運算方式，試圖讓機器擁有生物級的思考效率。", "phonetic": "ˌnjʊəroʊˈmɔːrfɪk"},
+        {"word": "hyperdimensional", "p": "hyper", "r": "dimensional", "meaning": "維度/測量", "definition": "高維空間的", "vibe": "在極高維度的向量空間中運算資料，是當代大型語言模型（LLM）處理語義的核心邏輯。", "phonetic": "ˌhaɪpərdɪˈmɛnʃənl"},
+        {"word": "autopoietic", "p": "auto", "r": "poietic", "meaning": "製作/創造", "definition": "自我生成的", "vibe": "描述一個系統能夠自我維護、自我產生。在強人工智慧（AGI）討論中，代表系統具備自我演化的生命力。", "phonetic": "ˌɔːtoʊpɔɪˈɛtɪk"},
+        
+        # --- 高階寫作 (Advanced Writing/Literary Theory) ---
+        {"word": "intertextuality", "p": "inter", "r": "textual", "meaning": "編織/文本", "definition": "文本互涉", "vibe": "強調沒有任何作品是孤立的，所有的文章都是由其他文本交織而成的『拼貼物』。", "phonetic": "ˌɪntərˌtɛkstʃuˈæləti"},
+        {"word": "epistemological", "p": "epistemo", "r": "logical", "meaning": "學說/研究", "definition": "認識論的", "vibe": "探討知識的核心本質。在高階評論中，用來質疑我們『如何知道我們所知道的事』。", "phonetic": "ɪˌpɪstəməˈlɒdʒɪkl"},
+        {"word": "defamiliarization", "p": "de", "r": "familiar", "meaning": "熟悉/家庭", "definition": "陌生化", "vibe": "文學創作的高階技巧：刻意用奇怪的方式描述平凡的事物，強迫讀者重新審視世界。", "phonetic": "diːfəˌmɪljəraɪˈzeɪʃn"},
+        
+        # --- 醫學 (Medicine) ---
+        {"word": "idiopathic", "p": "idio", "r": "pathic", "meaning": "痛苦/疾病", "definition": "特發性的 (病因不明)", "vibe": "當醫生帥氣地說出這個詞時，其實是在優雅地承認：『我們目前還不知道為什麼會生這個病。』", "phonetic": "ˌɪdiəˈpæθɪk"},
+        
+        # --- 法研 (Legal Research) ---
+        {"word": "jurisdictional", "p": "juris", "r": "dictional", "meaning": "說話/宣告", "definition": "管轄權的", "vibe": "法律攻防的起手式。如果法律效力不在該管轄區內，後面的論點再強都沒有意義。", "phonetic": "ˌdʒʊərɪsˈdɪkʃənl"},
+        
+        # --- 公務 (Public Service/Bureaucracy) ---
+        {"word": "bureaucratic", "p": "bureau", "r": "cratic", "meaning": "統治/力量", "definition": "官僚體制的", "vibe": "描述一種依賴複雜程序、層級嚴密但有時顯得僵化的行政系統。", "phonetic": "ˌbjʊərəˈkrætɪk"}
     ]
     df = pd.DataFrame(data)
     
