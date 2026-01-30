@@ -58,6 +58,13 @@ def render_unified_interface(payload):
             .wheel-mask {
                 background: linear-gradient(180deg, white 0%, transparent 40%, transparent 60%, white 100%);
             }
+            .card-enter {
+                animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            }
+            @keyframes slideUp {
+                from { opacity: 0; transform: translateY(20px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
         </style>
     </head>
     <body class="bg-gray-50">
@@ -98,7 +105,9 @@ def render_unified_interface(payload):
                 }, [p, r]);
 
                 return (
-                    <div className="p-6 max-w-4xl mx-auto space-y-8">
+                    /* 加大 pt-12 和 space-y-16 以徹底拉開滾輪與字卡的距離 */
+                    <div className="pt-12 pb-16 px-6 max-w-4xl mx-auto space-y-16">
+                        
                         {/* 滾輪區域 */}
                         <div className="flex justify-center items-center gap-8">
                             <Wheel items={DATA.prefixes} onSelect={setP} currentId={p} />
@@ -106,17 +115,17 @@ def render_unified_interface(payload):
                             <Wheel items={DATA.roots} onSelect={setR} currentId={r} />
                         </div>
 
-                        {/* 動態字卡區域 */}
-                        <div className="min-h-[300px]">
+                        {/* 動態字卡區域：pt-8 提供更多頂部空間 */}
+                        <div className="min-h-[400px] pt-8 relative">
                         {match ? (
-                            <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 transition-all duration-500 transform translate-y-0">
+                            <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100 card-enter">
                                 <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-8 text-white">
                                     <div className="flex justify-between items-center">
                                         <div>
                                             <h1 className="text-5xl font-black tracking-tight">{match.word}</h1>
                                             <p className="text-blue-100 text-xl mt-2 font-mono">/{match.phonetic}/</p>
                                         </div>
-                                        <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-full font-bold uppercase tracking-widest text-sm">
+                                        <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-full font-bold uppercase tracking-widest text-sm border border-white/30">
                                             {match.display}
                                         </div>
                                     </div>
@@ -129,12 +138,12 @@ def render_unified_interface(payload):
                                             <p className="text-amber-900 text-xl leading-relaxed">
                                                 The root <span className="font-black underline">"{r}"</span> means <span className="font-bold text-amber-700">{match.root_mean}</span>.
                                             </p>
-                                            <p className="text-amber-700 mt-2">Combined as: <b>{match.definition}</b></p>
+                                            <p className="text-amber-700 mt-2 font-medium">Definition: {match.definition}</p>
                                         </div>
                                     </div>
                                     <div className="space-y-4">
                                         <h3 className="text-gray-400 font-bold uppercase tracking-wider text-sm">🎧 Native Vibe</h3>
-                                        <div className="bg-blue-50 p-6 rounded-2xl border-l-4 border-blue-400">
+                                        <div className="bg-blue-50 p-6 rounded-2xl border-l-4 border-blue-400 h-full">
                                             <p className="text-blue-900 text-lg leading-relaxed italic">
                                                 "{match.vibe}"
                                             </p>
@@ -159,7 +168,8 @@ def render_unified_interface(payload):
     </html>
     """.replace("REPLACE_ME", json_data)
     
-    components.html(html_code, height=650, scrolling=False)
+    # 高度調整為 800
+    components.html(html_code, height=800, scrolling=False)
 
 # ==========================================
 # 3. 啟動 (The Launch)
