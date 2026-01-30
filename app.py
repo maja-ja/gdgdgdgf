@@ -3,94 +3,191 @@ import pandas as pd
 import base64
 import time
 import json
+import os
+import sqlite3
 from io import BytesIO
 from gtts import gTTS
 import streamlit.components.v1 as components
 
 # ==========================================
-# 1. 核心視覺配置 (繼承 v2.5 靈魂)
+# 1. 進階配置與 PWA 注入
 # ==========================================
-st.set_page_config(page_title="Etymon Universe 3.0", page_icon="🚀", layout="wide")
+st.set_page_config(
+    page_title="Etymon Decoder Pro",
+    page_icon="🧩",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-def inject_custom_css():
-    st.markdown("""
+def inject_pwa_and_css():
+    # PWA Manifest & Service Worker 注入
+    pwa_js = """
+    <link rel="manifest" href="https://your-domain.com/manifest.json">
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('https://your-domain.com/service-worker.js');
+      }
+    </script>
+    """
+    
+    # 專業學術 UI 系統 (Lora 為襯線, Inter 為無襯線)
+    st.markdown(f"""
+        {pwa_js}
         <style>
-            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Noto+Sans+TC:wght@500;700&display=swap');
-            .subject-card {
-                font-family: 'Inter', 'Noto Sans TC', sans-serif; 
-                background: linear-gradient(135deg, #1E88E5 0%, #1565C0 100%);
-                color: white; padding: 20px; border-radius: 15px;
-                margin-bottom: 15px; box-shadow: 0 4px 15px rgba(30, 136, 229, 0.3);
-            }
-            .hero-title { font-size: 3.5rem; font-weight: 900; color: #1E88E5; text-align: center; }
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Lora:ital,wght@0,400;0,700;1,400&family=Noto+Sans+TC:wght@400;700&display=swap');
+
+            /* 全域字體設定 */
+            html, body, [class*="css"] {{
+                font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            }}
+
+            /* 標題學術感 */
+            .hero-word {{
+                font-family: 'Lora', serif;
+                font-size: clamp(2.5rem, 8vw, 4.5rem);
+                font-weight: 700;
+                color: #1A237E;
+                line-height: 1.1;
+                margin-bottom: 0.2rem;
+            }}
+
+            /* 響應式 Breakdown 容器 */
+            .breakdown-container {{
+                font-size: clamp(1rem, 4vw, 1.8rem);
+                background: linear-gradient(135deg, #1A237E 0%, #283593 100%);
+                color: white;
+                padding: 15px 25px;
+                border-radius: 12px;
+                display: block; /* 手機端自動展開 */
+                text-align: center;
+                margin: 15px 0;
+            }}
+
+            /* 護眼模式控制 (由 Python State 切換) */
+            .main {{
+                background-color: {st.session_state.get('theme_bg', '#FFFFFF')};
+                color: {st.session_state.get('theme_text', '#121212')};
+            }}
+
+            /* 隱藏 Streamlit 預設裝飾 */
+            #MainMenu {{visibility: hidden;}}
+            footer {{visibility: hidden;}}
         </style>
     """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. 學科模組定義 (在這裡擴充內容)
+# 2. 資料庫：SQLite 離線備份機制
 # ==========================================
-def render_subject_content(title, desc, modules):
-    st.markdown(f"<div class='subject-card'><h1>{title}</h1><p>{desc}</p></div>", unsafe_allow_html=True)
-    cols = st.columns(len(modules))
-    for i, mod in enumerate(modules):
-        with cols[i]:
-            if st.button(f"🔓 開啟 {mod}", key=f"{title}_{mod}", use_container_width=True):
-                st.balloons()
-                st.info(f"{mod} 模組解碼中...")
+def init_offline_db():
+    conn = sqlite3.connect('local_cache.db')
+    return conn
+
+def load_db_with_cache():
+    SHEET_ID = "1W1ADPyf5gtGdpIEwkxBEsaJ0bksYldf4AugoXnq6Zvg"
+    url = f'https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv'
+    
+    try:
+        # 嘗試從網路讀取
+        df = pd.read_csv(url)
+        # 備份到本地 SQLite
+        conn = init_offline_db()
+        df.to_sql('etymon_data', conn, if_exists='replace', index=False)
+        return df
+    except Exception as e:
+        # 斷網時讀取本地
+        try:
+            conn = init_offline_db()
+            return pd.read_sql('SELECT * FROM etymon_data', conn)
+        except:
+            return pd.DataFrame()
 
 # ==========================================
-# 3. 穩定導航系統 (防止 Redirect Loop)
+# 3. 語音系統優化
+# ==========================================
+def speak_v2(text):
+    # 使用快取避免重覆產生音頻
+    tts = gTTS(text=text, lang='en')
+    fp = BytesIO()
+    tts.write_to_fp(fp)
+    b64 = base64.b64encode(fp.getvalue()).decode()
+    md = f"""
+        <audio id="audio_tag" autoplay>
+            <source src="data:audio/mp3;base64,{b64}" type="audio/mp3">
+        </audio>
+    """
+    st.components.v1.html(md, height=0)
+
+# ==========================================
+# 4. 主程式介面
 # ==========================================
 def main():
-    inject_custom_css()
-    OLD_ERA_URL = "https://etymon-universe.streamlit.app/"
+    if 'theme_bg' not in st.session_state:
+        st.session_state.theme_bg = '#FFFFFF'
+        st.session_state.theme_text = '#121212'
 
-    # --- 側邊欄 Era Gateway ---
-    st.sidebar.title("🌌 世代門戶")
-    c1, c2 = st.sidebar.columns(2)
-    with c1:
-        st.markdown(f'<a href="{OLD_ERA_URL}" target="_self" style="text-decoration:none;"><div style="text-align:center; padding:8px; border:1px solid #4B4B4B; border-radius:10px; color:white;">🔙 舊世代</div></a>', unsafe_allow_html=True)
-    with c2:
-        if st.sidebar.button("✨ 重置首頁", use_container_width=True, type="primary"):
-            st.session_state.clear()
-            st.rerun()
+    inject_pwa_and_css()
+    df = load_db_with_cache()
 
-    st.sidebar.divider()
-
-    # --- 學段切換 ---
-    universe = st.sidebar.radio(
-        "選擇教育宇宙",
-        ["🏠 宇宙中心", "🌱 國小宇宙", "🧬 國中宇宙", "🛰️ 高中宇宙"]
+    # --- 側邊欄：功能與主題 ---
+    st.sidebar.title("Etymon Decoder")
+    
+    # 主題切換
+    theme = st.sidebar.select_slider(
+        "閱讀模式",
+        options=["明亮", "護眼", "深藍"],
+        value="明亮"
     )
+    theme_map = {
+        "明亮": ("#FFFFFF", "#121212"),
+        "護眼": ("#F4ECD8", "#5B4636"), # 羊皮紙色
+        "深藍": ("#0A192F", "#E6F1FF")
+    }
+    st.session_state.theme_bg, st.session_state.theme_text = theme_map[theme]
 
-    if universe == "🏠 宇宙中心":
-        st.markdown("<div class='hero-title'>Etymon Universe 3.0</div>", unsafe_allow_html=True)
-        st.write("---")
-        st.subheader("歡迎來到新世代解碼核心")
-        st.write("我們已將原本的單字解碼技術，擴散到全台灣學子的所有學科。請由左側選擇您的學段。")
+    menu = st.sidebar.radio("導航", ["學術探索", "專業分類", "Mix Lab 實驗室"])
+
+    if menu == "學術探索":
+        st.markdown("<div class='hero-word'>Decoding Knowledge</div>", unsafe_allow_html=True)
         
-        # 視覺數據卡片
-        col1, col2, col3 = st.columns(3)
-        col1.metric("解碼學段", "3 大宇宙")
-        col2.metric("涵蓋學科", "18 門科目")
-        col3.metric("系統狀態", "穩定執行中")
+        # 搜尋功能
+        search_query = st.text_input("🔍 搜尋術語 (例: Neuro, Juris...)", "")
+        
+        if search_query:
+            results = df[df['word'].str.contains(search_query, case=False, na=False)]
+            for _, row in results.iterrows():
+                with st.expander(f"{row['word']} - {row['definition']}"):
+                    show_detailed_card(row)
+        else:
+            # 隨機展示
+            if st.button("🎲 隨機獲取新單字"):
+                st.session_state.random_word = df.sample(1).iloc[0]
+            
+            if 'random_word' in st.session_state:
+                show_detailed_card(st.session_state.random_word)
 
-    elif universe == "🌱 國小宇宙":
-        sub = st.selectbox("選擇科目", ["國語", "英語", "數學"])
-        if sub == "國語": render_subject_content("🍎 國小國語", "字感與修辭解碼", ["識字規律", "成語宇宙", "作文邏輯"])
-        elif sub == "英語": render_subject_content("🔤 國小英語", "基礎音韻與語感", ["自然發音", "核心單字", "情境對話"])
-        elif sub == "數學": render_subject_content("🔢 國小數學", "圖像化邏輯運算", ["幾何拼圖", "數感訓練", "應用問題"])
+def show_detailed_card(row):
+    st.markdown(f"<div class='hero-word'>{row['word']}</div>", unsafe_allow_html=True)
+    st.markdown(f"**/{row['phonetic']}/ | {row['category']}**")
+    
+    # 響應式 Layout 優化：在窄螢幕自動堆疊
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        st.markdown(f"<div class='breakdown-container'>{row['breakdown']}</div>", unsafe_allow_html=True)
+    with col2:
+        if st.button("🔊 發音", key=f"audio_{row['word']}"):
+            speak_v2(row['word'])
 
-    elif universe == "🧬 國中宇宙":
-        sub = st.radio("選擇科目", ["國文", "英文", "數學", "自然", "社會"], horizontal=True)
-        st.divider()
-        render_subject_content(f"📚 國中{sub}", f"國中{sub}核心框架載入中", ["重點筆記", "考古題解", "考點預測"])
-
-    elif universe == "🛰️ 高中宇宙":
-        sub = st.selectbox("選擇科目", ["國文", "英文", "數學", "物理", "化學", "生物", "地科", "歷史", "地理", "公民"])
-        st.divider()
-        # 這裡就是你的高中 10 科！
-        render_subject_content(f"🚀 高中{sub}", f"高階{sub}深度思辨與學術模型", ["學測攻堅", "分科測驗", "學習歷程"])
+    st.markdown("---")
+    t1, t2, t3 = st.tabs(["📖 定義與用法", "🏛️ 字源背景", "👔 專業場景"])
+    with t1:
+        st.write(f"**學術定義:** {row['definition']}")
+        st.info(f"**例句:** {row['example']}")
+    with t2:
+        st.write(f"**字根核心:** {row['roots']} ({row['meaning']})")
+        st.success(f"**記憶法:** {row['memory_hook']}")
+    with t3:
+        st.write(f"**社會地位感:** {row['social_status']}")
+        st.warning(f"**使用警告:** {row['usage_warning']}")
 
 if __name__ == "__main__":
     main()
