@@ -97,10 +97,8 @@ def text_to_speech_html(text):
 def render_react_wheel(payload):
     json_data = json.dumps(payload)
     
-    # 優化重點：
-    # 1. 增加觸覺回饋視覺效果 (Snap scroll)
-    # 2. 當匹配成功時，顯示明顯的成功卡片
-    html_code = f"""
+    # 這裡我們不使用 f-string，改用普通字串，避免大括號衝突
+    html_code = """
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -110,113 +108,105 @@ def render_react_wheel(payload):
         <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
         <script src="https://cdn.tailwindcss.com"></script>
         <style>
-            .no-scrollbar::-webkit-scrollbar {{ display: none; }}
-            .no-scrollbar {{ -ms-overflow-style: none; scrollbar-width: none; }}
-            
-            /* 玻璃擬態背景 */
-            .glass {{
+            .no-scrollbar::-webkit-scrollbar { display: none; }
+            .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+            .glass {
                 background: rgba(255, 255, 255, 0.7);
                 backdrop-filter: blur(10px);
                 border: 1px solid rgba(255, 255, 255, 0.5);
-            }}
-            .wheel-gradient {{
+            }
+            .wheel-gradient {
                 background: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 20%, rgba(255,255,255,0) 80%, rgba(255,255,255,1) 100%);
-            }}
+            }
         </style>
     </head>
     <body class="bg-transparent overflow-hidden">
         <div id="root"></div>
 
         <script type="text/babel">
-            const {{ useState, useEffect, useRef }} = React;
-            const DATA = {json_data};
-            const ITEM_HEIGHT = 50; // 每個選項的高度
+            const { useState, useEffect, useRef } = React;
+            
+            // 使用 REPLACE_ME 作為佔位符
+            const DATA = REPLACE_JSON_DATA; 
+            const ITEM_HEIGHT = 50;
 
-            const WheelColumn = ({{ items, onSelect, label }}) => {{
+            const WheelColumn = ({ items, onSelect, label }) => {
                 const ref = useRef(null);
-                
-                const handleScroll = () => {{
+                const handleScroll = () => {
                     if (!ref.current) return;
                     const index = Math.round(ref.current.scrollTop / ITEM_HEIGHT);
                     if (items[index]) onSelect(items[index].id);
-                }};
+                };
 
                 return (
                     <div className="flex flex-col items-center">
-                        <span className="text-xs font-bold text-gray-400 mb-2 uppercase tracking-widest">{{label}}</span>
+                        <span className="text-xs font-bold text-gray-400 mb-2 uppercase tracking-widest">{label}</span>
                         <div className="relative w-28 h-[150px] bg-white rounded-xl shadow-inner border border-gray-200 overflow-hidden">
-                            {/* 中央選取線 */}
                             <div className="absolute top-[50px] left-0 w-full h-[50px] bg-blue-50 border-y border-blue-200 pointer-events-none z-0"></div>
-                            
-                            {/* 滾動容器 */}
                             <div 
-                                ref={{ref}}
-                                onScroll={{handleScroll}}
+                                ref={ref}
+                                onScroll={handleScroll}
                                 className="absolute inset-0 overflow-y-scroll snap-y snap-mandatory no-scrollbar py-[50px] z-10"
                             >
-                                {{items.map((item) => (
-                                    <div key={{item.id}} className="h-[50px] flex items-center justify-center snap-center">
-                                        <span className="text-lg font-bold text-gray-700 font-mono">{{item.label}}</span>
+                                {items.map((item) => (
+                                    <div key={item.id} className="h-[50px] flex items-center justify-center snap-center">
+                                        <span className="text-lg font-bold text-gray-700 font-mono">{item.label}</span>
                                     </div>
-                                ))}}
+                                ))}
                             </div>
-                            
-                            {/* 上下遮罩 */}
                             <div className="absolute inset-0 wheel-gradient pointer-events-none z-20"></div>
                         </div>
                     </div>
                 );
-            }};
+            };
 
-            const App = () => {{
-                // 預設選中第一組
+            const App = () => {
                 const [pId, setP] = useState(DATA.prefixes[0]?.id);
                 const [rId, setR] = useState(DATA.roots[0]?.id);
                 const [match, setMatch] = useState(null);
 
-                useEffect(() => {{
+                useEffect(() => {
                     const found = DATA.dictionary.find(d => d.combo[0] === pId && d.combo[1] === rId);
                     setMatch(found || null);
-                }}, [pId, rId]);
+                }, [pId, rId]);
 
                 return (
                     <div className="flex flex-col items-center justify-center p-4">
                         <div className="flex gap-4 mb-6">
-                            <WheelColumn items={{DATA.prefixes}} onSelect={{setP}} label="Prefix" />
+                            <WheelColumn items={DATA.prefixes} onSelect={setP} label="Prefix" />
                             <div className="h-[150px] flex items-center pt-6 text-gray-300">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={{2}} d="M12 4v16m8-8H4" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                                 </svg>
                             </div>
-                            <WheelColumn items={{DATA.roots}} onSelect={{setR}} label="Root" />
+                            <WheelColumn items={DATA.roots} onSelect={setR} label="Root" />
                         </div>
 
-                        {{match ? (
-                            <div className="animate-bounce-in w-full max-w-sm glass rounded-2xl p-4 shadow-lg border-l-4 border-blue-500 flex justify-between items-center transition-all duration-300">
+                        {match ? (
+                            <div className="w-full max-w-sm glass rounded-2xl p-4 shadow-lg border-l-4 border-blue-500 flex justify-between items-center">
                                 <div>
-                                    <div className="text-sm text-blue-500 font-bold mb-1">MATCH FOUND!</div>
-                                    <h1 className="text-3xl font-black text-gray-800 tracking-tight">{{match.word}}</h1>
-                                    <p className="text-gray-500 text-sm mt-1">{{match.meaning}}</p>
+                                    <div className="text-sm text-blue-500 font-bold mb-1">MATCH!</div>
+                                    <h1 className="text-3xl font-black text-gray-800 tracking-tight">{match.word}</h1>
+                                    <p className="text-gray-500 text-sm mt-1">{match.meaning}</p>
                                 </div>
-                                <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
-                                    ✨
-                                </div>
+                                <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">✨</div>
                             </div>
                         ) : (
-                            <div className="w-full max-w-sm h-[100px] border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center text-gray-400">
-                                <span className="text-sm">Spin the wheels to combine...</span>
+                            <div className="w-full max-w-sm h-[100px] border-2 border-dashed border-gray-300 rounded-2xl flex items-center justify-center text-gray-400">
+                                <span className="text-sm">Spin to combine...</span>
                             </div>
-                        )}}
+                        )}
                     </div>
                 );
-            }};
+            };
 
             const root = ReactDOM.createRoot(document.getElementById('root'));
             root.render(<App />);
         </script>
     </body>
     </html>
-    """
+    """.replace("REPLACE_JSON_DATA", json_data) # 在這裡注入資料
+    
     components.html(html_code, height=400)
 
 # ==========================================
