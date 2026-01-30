@@ -70,19 +70,28 @@ def main():
         st.session_state.current_universe = "🏠 首頁"
 
     # --- 側邊欄：Era Gateway ---
+    # --- 側邊欄：Era Gateway (修正穩定跳轉版) ---
     st.sidebar.title("Era Gateway")
-    c1, c2 = st.sidebar.columns(2)
-    with c1:
-        # 使用 HTML 標籤確保跳轉不產生 Loop
-        st.markdown(f'<a href="{OLD_ERA_URL}" target="_self"><button style="width:100%; border-radius:5px; border:1px solid #4B4B4B; background:none; color:white; padding:5px; cursor:pointer;">舊世代</button></a>', unsafe_allow_html=True)
-    with c2:
-        # 點擊新世代 = 回到本 App 的首頁
-        if st.sidebar.button("新世代", use_container_width=True, type="primary"):
+    
+    # 用最簡單的 Markdown 語法做按鈕，這在雲端絕對能跳轉
+    col_a, col_b = st.sidebar.columns(2)
+    with col_a:
+        # 舊世代：直接用標準連結樣式，避免 JS 衝突
+        st.markdown(
+            f"""<a href="{OLD_ERA_URL}" target="_self" style="text-decoration:none;">
+                <div style="text-align:center; padding:8px; border:1px solid #4B4B4B; border-radius:10px; color:#FFFFFF; background-color:transparent;">
+                    🔙 舊世代
+                </div>
+            </a>""", 
+            unsafe_allow_html=True
+        )
+    with col_b:
+        # 新世代：重置目前 App 狀態
+        if st.sidebar.button("✨ 新世代", use_container_width=True, type="primary"):
             st.session_state.current_universe = "🏠 首頁"
             st.rerun()
 
     st.sidebar.divider()
-
     # --- 三大主邏輯導覽 ---
     universe = st.sidebar.selectbox(
         "切換教育宇宙",
