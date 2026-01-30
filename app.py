@@ -1,216 +1,153 @@
 import streamlit as st
 import pandas as pd
 import json
-import base64
-from io import BytesIO
-from gtts import gTTS
 import streamlit.components.v1 as components
 
 # ==========================================
-# 1. 核心配置與 CSS (The Foundation)
+# 1. 核心配置與資料 (The Brain)
 # ==========================================
-st.set_page_config(page_title="Etymon Decoder", page_icon="🧬", layout="wide")
+st.set_page_config(page_title="Etymon Decoder Hybrid", layout="wide")
 
-def inject_custom_css():
-    st.markdown("""
-        <style>
-            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Noto+Sans+TC:wght@500;700&display=swap');
-            .stApp { font-family: 'Inter', 'Noto Sans TC', sans-serif; background-color: #F8F9FA; }
-            .block-container { padding-top: 1.5rem; }
-            
-            /* 讓 Streamlit 的 Selectbox 看起來更現代 */
-            .stSelectbox div[data-baseweb="select"] > div {
-                border-radius: 12px;
-                background-color: white;
-                border: 2px solid #E3F2FD;
-            }
-            
-            /* 裝飾性標題 */
-            .section-label {
-                color: #546E7A;
-                font-size: 0.9rem;
-                font-weight: 600;
-                text-transform: uppercase;
-                letter-spacing: 1px;
-                margin-bottom: 8px;
-            }
-        </style>
-    """, unsafe_allow_html=True)
-
-# ==========================================
-# 2. 資料處理 (Python Brain)
-# ==========================================
 @st.cache_data
-def get_data_payload():
-    # 模擬資料庫
+def get_full_data():
+    # 這裡包含所有字卡需要的細節資訊
     data = [
-        {"word": "distract", "breakdown": "dis+tract", "roots": "tract", "meaning": "抽/拉", "definition": "使分心", "category": "心理", "native_vibe": "像是有東西硬生生把你從軌道上拉走，注意力被扯開。", "phonetic": "dɪˈstrækt"},
-        {"word": "transform", "breakdown": "trans+form", "roots": "form", "meaning": "形狀", "definition": "轉化/變形", "category": "變化", "native_vibe": "從一種型態徹底變成另一種，像變形金剛或毛毛蟲變蝴蝶。", "phonetic": "trænsˈfɔːrm"},
-        {"word": "attract", "breakdown": "at+tract", "roots": "tract", "meaning": "抽/拉", "definition": "吸引", "category": "物理/人際", "native_vibe": "像磁鐵一樣，有一股無形的力量把你拉過去。", "phonetic": "əˈtrækt"},
-        {"word": "predict", "breakdown": "pre+dict", "roots": "dict", "meaning": "說", "definition": "預測", "category": "時間", "native_vibe": "在事情發生之前(pre)就先斷言(dict)會發生。", "phonetic": "prɪˈdɪkt"},
-        {"word": "revoke", "breakdown": "re+voke", "roots": "voke", "meaning": "喊叫", "definition": "撤銷", "category": "法律", "native_vibe": "把已經發出的命令或執照，大聲喊(voke)回來(re)，使其無效。", "phonetic": "rɪˈvoʊk"}
+        {"word": "distract", "p": "dis", "r": "tract", "meaning": "抽/拉", "definition": "使分心", "vibe": "像是有東西硬生生把你從軌道上拉走。", "phonetic": "dɪˈstrækt"},
+        {"word": "transform", "p": "trans", "r": "form", "meaning": "形狀", "definition": "轉化/變形", "vibe": "徹底的改變，像毛毛蟲變蝴蝶。", "phonetic": "trænsˈfɔːrm"},
+        {"word": "attract", "p": "at", "r": "tract", "meaning": "抽/拉", "definition": "吸引", "vibe": "像磁鐵般的引力把你拉近。", "phonetic": "əˈtrækt"},
+        {"word": "predict", "p": "pre", "r": "dict", "meaning": "說", "definition": "預測", "vibe": "在事情發生前就先說出來。", "phonetic": "prɪˈdɪkt"},
+        {"word": "revoke", "p": "re", "r": "voke", "meaning": "喊叫", "definition": "撤銷", "vibe": "把說出去的話喊回來，使其無效。", "phonetic": "rɪˈvoʊk"}
     ]
     df = pd.DataFrame(data)
     
-    # 建立 React 需要的滾輪資料
-    prefixes, roots, dictionary_map = set(), set(), []
+    # 格式化給 React 的資料
+    prefixes = [{"id": p, "label": f"{p}-"} for p in sorted(df['p'].unique())]
+    roots = [{"id": r, "label": f"-{r}"} for r in sorted(df['r'].unique())]
     
+    # 將每一筆資料都變成字典格式
+    dictionary = []
     for _, row in df.iterrows():
-        parts = row['breakdown'].split('+')
-        if len(parts) >= 2:
-            p, r = parts[0], parts[1]
-            prefixes.add(p)
-            roots.add(r)
-            dictionary_map.append({
-                "combo": [f"p_{p}", f"r_{r}"], 
-                "word": row['word'],
-                "meaning": row['definition'],
-                "display": f"{p} + {r}"
-            })
-    
-    # 為了讓 React 滾輪好操作，我們將所有選項排序
-    react_prefixes = [{"id": f"p_{x}", "label": f"{x}-"} for x in sorted(list(prefixes))]
-    react_roots = [{"id": f"r_{x}", "label": f"-{x}"} for x in sorted(list(roots))]
-    
-    return df, {
-        "prefixes": react_prefixes, 
-        "roots": react_roots, 
-        "dictionary": dictionary_map
-    }
-
-def text_to_speech_html(text):
-    try:
-        tts = gTTS(text=text, lang='en')
-        fp = BytesIO()
-        tts.write_to_fp(fp)
-        b64 = base64.b64encode(fp.getvalue()).decode()
-        return f"""
-            <audio id="audio-{text}" src="data:audio/mp3;base64,{b64}"></audio>
-            <button onclick="document.getElementById('audio-{text}').play()" style="border:none; background:none; cursor:pointer; font-size:1.5rem;">🔊</button>
-        """
-    except:
-        return "🔊 (Offline)"
+        dictionary.append({
+            "combo": [row['p'], row['r']],
+            "word": row['word'],
+            "definition": row['definition'],
+            "phonetic": row['phonetic'],
+            "root_mean": row['meaning'],
+            "vibe": row['vibe'],
+            "display": f"{row['p']} + {row['r']}"
+        })
+        
+    return {"prefixes": prefixes, "roots": roots, "dictionary": dictionary}
 
 # ==========================================
-# 3. React 前端組件 (Frontend Skin)
+# 2. React 滾輪 + 字卡整合 (The Frontend)
 # ==========================================
-def render_react_wheel(payload):
+def render_unified_interface(payload):
     json_data = json.dumps(payload)
     
-    # 這裡我們不使用 f-string，改用普通字串，避免大括號衝突
     html_code = """
     <!DOCTYPE html>
-    <html lang="en">
+    <html>
     <head>
-        <meta charset="UTF-8">
         <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
         <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
         <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
         <script src="https://cdn.tailwindcss.com"></script>
         <style>
             .no-scrollbar::-webkit-scrollbar { display: none; }
-            .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-            .glass {
-                background: rgba(255, 255, 255, 0.7);
-                backdrop-filter: blur(10px);
-                border: 1px solid rgba(255, 255, 255, 0.5);
-            }
-            .wheel-gradient {
-                background: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 20%, rgba(255,255,255,0) 80%, rgba(255,255,255,1) 100%);
+            .wheel-mask {
+                background: linear-gradient(180deg, white 0%, transparent 40%, transparent 60%, white 100%);
             }
         </style>
     </head>
-    <body class="bg-transparent overflow-hidden">
+    <body class="bg-gray-50">
         <div id="root"></div>
-
         <script type="text/babel">
             const { useState, useEffect, useRef } = React;
-            
-            // 使用 REPLACE_ME 作為佔位符
-            const DATA = REPLACE_JSON_DATA; 
-            const ITEM_HEIGHT = 50;
+            const DATA = REPLACE_ME;
 
-            const WheelColumn = ({ items, onSelect, label }) => {
+            const Wheel = ({ items, onSelect, currentId }) => {
                 const ref = useRef(null);
                 const handleScroll = () => {
-                    if (!ref.current) return;
-                    const index = Math.round(ref.current.scrollTop / ITEM_HEIGHT);
-                    if (items[index]) onSelect(items[index].id);
+                    const idx = Math.round(ref.current.scrollTop / 50);
+                    if (items[idx] && items[idx].id !== currentId) onSelect(items[idx].id);
                 };
-
                 return (
-                    <div className="flex flex-col items-center">
-                        <span className="text-xs font-bold text-gray-400 mb-2 uppercase tracking-widest">{label}</span>
-                        <div className="relative w-28 h-[150px] bg-white rounded-xl shadow-inner border border-gray-200 overflow-hidden">
-                            <div className="absolute top-[50px] left-0 w-full h-[50px] bg-blue-50 border-y border-blue-200 pointer-events-none z-0"></div>
-                            <div 
-                                ref={ref}
-                                onScroll={handleScroll}
-                                className="absolute inset-0 overflow-y-scroll snap-y snap-mandatory no-scrollbar py-[50px] z-10"
-                            >
-                                {items.map((item) => (
-                                    <div key={item.id} className="h-[50px] flex items-center justify-center snap-center">
-                                        <span className="text-lg font-bold text-gray-700 font-mono">{item.label}</span>
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="absolute inset-0 wheel-gradient pointer-events-none z-20"></div>
+                    <div className="relative w-32 h-40 bg-white rounded-xl shadow-inner border overflow-hidden">
+                        <div className="absolute top-1/2 left-0 w-full h-10 -translate-y-1/2 bg-blue-50 border-y border-blue-200 pointer-events-none"></div>
+                        <div ref={ref} onScroll={handleScroll} className="h-full overflow-y-scroll snap-y snap-mandatory no-scrollbar py-16">
+                            {items.map(item => (
+                                <div key={item.id} className="h-[50px] flex items-center justify-center snap-center font-bold text-lg text-gray-700">
+                                    {item.label}
+                                </div>
+                            ))}
                         </div>
+                        <div className="absolute inset-0 wheel-mask pointer-events-none"></div>
                     </div>
                 );
             };
 
-                        const App = () => {
-                const [pId, setP] = useState(DATA.prefixes[0]?.id);
-                const [rId, setR] = useState(DATA.roots[0]?.id);
+            const App = () => {
+                const [p, setP] = useState(DATA.prefixes[0].id);
+                const [r, setR] = useState(DATA.roots[0].id);
                 const [match, setMatch] = useState(null);
 
                 useEffect(() => {
-                    // 當滾輪轉動，立刻在前端尋找匹配的單字詳情
-                    const found = DATA.dictionary.find(d => d.combo[0] === pId && d.combo[1] === rId);
-                    setMatch(found || null);
-                }, [pId, rId]);
+                    const found = DATA.dictionary.find(d => d.combo[0] === p && d.combo[1] === r);
+                    setMatch(found);
+                }, [p, r]);
 
                 return (
-                    <div className="flex flex-col items-center justify-center p-4">
-                        {/* 滾輪部分 */}
-                        <div className="flex gap-4 mb-8">
-                            <WheelColumn items={DATA.prefixes} onSelect={setP} label="Prefix" />
-                            <div className="h-[150px] flex items-center pt-6 text-gray-300">
-                                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                            </div>
-                            <WheelColumn items={DATA.roots} onSelect={setR} label="Root" />
+                    <div className="p-6 max-w-4xl mx-auto space-y-8">
+                        {/* 滾輪區域 */}
+                        <div className="flex justify-center items-center gap-8">
+                            <Wheel items={DATA.prefixes} onSelect={setP} currentId={p} />
+                            <div className="text-4xl text-gray-300 font-light">+</div>
+                            <Wheel items={DATA.roots} onSelect={setR} currentId={r} />
                         </div>
 
-                        {/* 字卡部分：直接整合在 React 裡 */}
+                        {/* 動態字卡區域 */}
+                        <div className="min-h-[300px]">
                         {match ? (
-                            <div className="w-full max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                <div className="bg-white rounded-3xl p-8 shadow-2xl border border-blue-50/50">
-                                    <div className="flex justify-between items-start mb-6">
+                            <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 transition-all duration-500 transform translate-y-0">
+                                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-8 text-white">
+                                    <div className="flex justify-between items-center">
                                         <div>
-                                            <h1 className="text-5xl font-black text-blue-600 mb-2">{match.word}</h1>
-                                            <p className="text-xl text-gray-400 font-mono italic">/{match.phonetic}/</p>
+                                            <h1 className="text-5xl font-black tracking-tight">{match.word}</h1>
+                                            <p className="text-blue-100 text-xl mt-2 font-mono">/{match.phonetic}/</p>
                                         </div>
-                                        <div className="bg-blue-50 px-4 py-2 rounded-2xl text-blue-600 font-bold">
+                                        <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-full font-bold uppercase tracking-widest text-sm">
                                             {match.display}
                                         </div>
                                     </div>
-                                    
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="bg-orange-50 p-6 rounded-2xl border-l-8 border-orange-400">
-                                            <h3 className="text-orange-800 font-bold mb-2">🗝️ 字根解碼</h3>
-                                            <p className="text-orange-900 text-lg">"{match.root}" 的意思是 <b>{match.meaning}</b></p>
+                                </div>
+                                
+                                <div className="p-8 grid md:grid-cols-2 gap-8 bg-white">
+                                    <div className="space-y-4">
+                                        <h3 className="text-gray-400 font-bold uppercase tracking-wider text-sm">🗝️ Etymology Breakdown</h3>
+                                        <div className="bg-amber-50 p-6 rounded-2xl border-l-4 border-amber-400">
+                                            <p className="text-amber-900 text-xl leading-relaxed">
+                                                The root <span className="font-black underline">"{r}"</span> means <span className="font-bold text-amber-700">{match.root_mean}</span>.
+                                            </p>
+                                            <p className="text-amber-700 mt-2">Combined as: <b>{match.definition}</b></p>
                                         </div>
-                                        <div className="bg-blue-50 p-6 rounded-2xl border-l-8 border-blue-400">
-                                            <h3 className="text-blue-800 font-bold mb-2">🎧 語感 (Vibe)</h3>
-                                            <p className="text-blue-900 leading-relaxed">{match.vibe}</p>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <h3 className="text-gray-400 font-bold uppercase tracking-wider text-sm">🎧 Native Vibe</h3>
+                                        <div className="bg-blue-50 p-6 rounded-2xl border-l-4 border-blue-400">
+                                            <p className="text-blue-900 text-lg leading-relaxed italic">
+                                                "{match.vibe}"
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         ) : (
-                            <div className="text-gray-300 text-xl font-medium mt-10">轉動滾輪組合新單字...</div>
+                            <div className="h-[300px] border-4 border-dashed border-gray-200 rounded-3xl flex items-center justify-center text-gray-400 text-xl font-medium">
+                                🌀 Spin the wheels to decode a word...
+                            </div>
                         )}
+                        </div>
                     </div>
                 );
             };
@@ -220,82 +157,19 @@ def render_react_wheel(payload):
         </script>
     </body>
     </html>
-    """.replace("REPLACE_JSON_DATA", json_data) # 在這裡注入資料
+    """.replace("REPLACE_ME", json_data)
     
-    components.html(html_code, height=400)
+    components.html(html_code, height=650, scrolling=False)
 
 # ==========================================
-# 4. Streamlit 主邏輯 (The Deep Dive)
+# 3. 啟動 (The Launch)
 # ==========================================
 def main():
-    inject_custom_css()
-    df, react_payload = get_data_payload()
-
-    # --- Header ---
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        st.title("Etymon Decoder")
-        st.caption("Visualizing English Etymology through Interactive Wheels")
+    st.title("🧬 Etymon Decoder 2.0")
+    st.markdown("轉動滾輪即時解碼單字語源與語感。")
     
-    st.divider()
-
-    # --- Section A: React Wheel ---
-    # 這是 Hybrid 的核心：用 Web 技術做互動，但顯示在 Streamlit 裡
-    render_react_wheel(react_payload)
-
-    # --- Section B: Python Analysis ---
-    st.markdown("<div class='section-label'>🔬 Deep Analysis Lab</div>", unsafe_allow_html=True)
-    
-    # 用戶操作指引 (因為 React 無法直接寫入 st.session_state，我們需要這個橋樑)
-    st.info("👆 在上方找到單字後，請在下方選單選取以查看深度解析：")
-
-    # 搜尋/選擇區
-    target_word = st.selectbox(
-        "選擇單字：", 
-        df['word'].tolist(),
-        index=0,
-        help="選擇你剛剛在滾輪上組成的單字"
-    )
-
-    if target_word:
-        # 抓取資料
-        row = df[df['word'] == target_word].iloc[0]
-        
-        # 顯示卡片
-        st.markdown("---")
-        
-        # 佈局：左邊是核心資訊，右邊是語感與發音
-        c1, c2 = st.columns([2, 1])
-        
-        # 找到這一段並確保格式正確
-        with c1:
-            # 建議將 HTML 字串先存在變數，再餵給 st.markdown
-            card_html = f"""
-            <div style="background-color:white; padding:30px; border-radius:20px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #E3F2FD;">
-                <h1 style="margin:0; font-size: 3rem; color: #1565C0;">{row['word']}</h1>
-                <div style="color:#78909C; font-size: 1.2rem; font-family: monospace; margin-bottom: 20px;">/{row['phonetic']}/</div>
-                
-                <div style="display:flex; gap:10px; align-items:center; margin-bottom:15px;">
-                    <span style="background:#E3F2FD; color:#1565C0; padding:5px 12px; border-radius:8px; font-weight:bold;">{row['breakdown']}</span>
-                    <span style="color:#90A4AE;">➞</span>
-                    <span style="font-size:1.2rem; font-weight:bold;">{row['definition']}</span>
-                </div>
-                
-                <div style="background:#FFF3E0; padding:15px; border-radius:10px; border-left: 5px solid #FF9800;">
-                    <strong>🗝️ Root Strategy:</strong> <br>
-                    root "<b>{row['roots']}</b>" means <em>{row['meaning']}</em>.
-                </div>
-            </div>
-            """
-            st.markdown(card_html, unsafe_allow_html=True)
-            
-        with c2:
-            st.markdown("### 🎧 Native Vibe")
-            st.write(row['native_vibe'])
-            
-            st.markdown("### 🔊 Pronunciation")
-            # 嵌入音檔
-            st.markdown(text_to_speech_html(row['word']), unsafe_allow_html=True)
+    data_payload = get_full_data()
+    render_unified_interface(data_payload)
 
 if __name__ == "__main__":
     main()
