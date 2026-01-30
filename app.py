@@ -160,41 +160,56 @@ def render_react_wheel(payload):
                 );
             };
 
-            const App = () => {
+                        const App = () => {
                 const [pId, setP] = useState(DATA.prefixes[0]?.id);
                 const [rId, setR] = useState(DATA.roots[0]?.id);
                 const [match, setMatch] = useState(null);
 
                 useEffect(() => {
+                    // 當滾輪轉動，立刻在前端尋找匹配的單字詳情
                     const found = DATA.dictionary.find(d => d.combo[0] === pId && d.combo[1] === rId);
                     setMatch(found || null);
                 }, [pId, rId]);
 
                 return (
                     <div className="flex flex-col items-center justify-center p-4">
-                        <div className="flex gap-4 mb-6">
+                        {/* 滾輪部分 */}
+                        <div className="flex gap-4 mb-8">
                             <WheelColumn items={DATA.prefixes} onSelect={setP} label="Prefix" />
                             <div className="h-[150px] flex items-center pt-6 text-gray-300">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                </svg>
+                                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                             </div>
                             <WheelColumn items={DATA.roots} onSelect={setR} label="Root" />
                         </div>
 
+                        {/* 字卡部分：直接整合在 React 裡 */}
                         {match ? (
-                            <div className="w-full max-w-sm glass rounded-2xl p-4 shadow-lg border-l-4 border-blue-500 flex justify-between items-center">
-                                <div>
-                                    <div className="text-sm text-blue-500 font-bold mb-1">MATCH!</div>
-                                    <h1 className="text-3xl font-black text-gray-800 tracking-tight">{match.word}</h1>
-                                    <p className="text-gray-500 text-sm mt-1">{match.meaning}</p>
+                            <div className="w-full max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <div className="bg-white rounded-3xl p-8 shadow-2xl border border-blue-50/50">
+                                    <div className="flex justify-between items-start mb-6">
+                                        <div>
+                                            <h1 className="text-5xl font-black text-blue-600 mb-2">{match.word}</h1>
+                                            <p className="text-xl text-gray-400 font-mono italic">/{match.phonetic}/</p>
+                                        </div>
+                                        <div className="bg-blue-50 px-4 py-2 rounded-2xl text-blue-600 font-bold">
+                                            {match.display}
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="bg-orange-50 p-6 rounded-2xl border-l-8 border-orange-400">
+                                            <h3 className="text-orange-800 font-bold mb-2">🗝️ 字根解碼</h3>
+                                            <p className="text-orange-900 text-lg">"{match.root}" 的意思是 <b>{match.meaning}</b></p>
+                                        </div>
+                                        <div className="bg-blue-50 p-6 rounded-2xl border-l-8 border-blue-400">
+                                            <h3 className="text-blue-800 font-bold mb-2">🎧 語感 (Vibe)</h3>
+                                            <p className="text-blue-900 leading-relaxed">{match.vibe}</p>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">✨</div>
                             </div>
                         ) : (
-                            <div className="w-full max-w-sm h-[100px] border-2 border-dashed border-gray-300 rounded-2xl flex items-center justify-center text-gray-400">
-                                <span className="text-sm">Spin to combine...</span>
-                            </div>
+                            <div className="text-gray-300 text-xl font-medium mt-10">轉動滾輪組合新單字...</div>
                         )}
                     </div>
                 );
