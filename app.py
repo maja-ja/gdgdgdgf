@@ -61,24 +61,43 @@ def sen_civ(): st.title("⚖️ 高中公民"); st.success("法律、經濟與�
 # ==========================================
 def main():
     # 這是你剛才提供的「舊世代」網址
+    st.sidebar.title("Era Gateway")
+    
+    # 準備網址
     OLD_ERA_URL = "https://etymon-universe.streamlit.app/"
     
-    st.sidebar.title("Era Gateway")
-    c1, c2 = st.sidebar.columns(2)
+    col_a, col_b = st.sidebar.columns(2)
     
-    with c1:
-        # 使用你提供的「可行邏輯」實裝跳回功能
-        if st.button("舊世代", use_container_width=True):
-            js = f"window.open('{OLD_ERA_URL}', '_self')"
-            st.components.v1.html(f"<script>{js}</script>", height=0)
-            st.markdown(f"[手動返回舊宇宙]({OLD_ERA_URL})")
-            
-    with c2:
-        # 在新世代 App 裡，點擊新世代就是「回新世代首頁」
-        if st.button("新世代", type="primary", use_container_width=True):
-            if 'universe' in st.session_state: del st.session_state.universe
+    with col_a:
+        # 這是最穩定的方式：看起來像按鈕的 Markdown 連結
+        # target="_self" 確保在同一個標籤頁開啟，不會被瀏覽器攔截
+        st.markdown(
+            f"""
+            <a href="{OLD_ERA_URL}" target="_self" style="text-decoration: none;">
+                <div style="
+                    text-align: center;
+                    background-color: transparent;
+                    border: 1px solid #4B4B4B;
+                    padding: 6px;
+                    border-radius: 10px;
+                    color: white;
+                    font-size: 14px;
+                    cursor: pointer;">
+                    🔙 舊世代
+                </div>
+            </a>
+            """,
+            unsafe_allow_html=True
+        )
+    
+    with col_b:
+        # 新世代按鈕只做「App 內部的重置」，不涉及網址跳轉，所以不會有 Redirect 錯誤
+        if st.sidebar.button("✨ 新世代", use_container_width=True, type="primary"):
+            # 清除 Session 狀態，強迫回到首頁
+            for key in st.session_state.keys():
+                del st.session_state[key]
             st.rerun()
-
+    
     st.sidebar.divider()
 
     # --- 高中 10 科按鈕邏輯 ---
